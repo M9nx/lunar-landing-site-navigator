@@ -28,6 +28,18 @@ The 100 terrain clones provide a potential way to estimate how DEM uncertainty a
 
 Source: [NASA PGDA, High-Resolution LOLA Topography for Lunar South Pole Sites](https://pgda.gsfc.nasa.gov/products/78).
 
+### Complementary Malapert shape-from-shading DEM
+
+A newer, complementary product is available for **Malapert Massif**. NASA PGDA describes 5 m/pixel shape-from-shading DEMs (SDEMs) for 13 Artemis III candidate regions. LROC NAC images add short-scale topographic detail in illuminated areas while keeping the models consistent with LOLA's geodetic reference. The product page notes that basic LOLA 5 m grids can contain smooth interpolated gaps where track density is sparse.
+
+The Zenodo archive includes a dedicated Malapert Massif package listed at about **2.2 GB compressed**. It is too large for the Git repository, but a data-science host can download only this region if local storage permits. The archive describes 32-bit GeoTIFFs in the Moon (2015) South Polar Stereographic projection. The current archive's 13-region list does not include Shackleton rim, so this is a Site23 comparison option rather than a replacement for the Site04 LOLA products.
+
+**Decision:** For a Malapert terrain-horizon experiment, compare its LOLA LDEM and SDEM over their common coverage. Preserve the archive README and ancillary files; inspect no-data areas, image coverage, and processing metadata. Confirm projection/frame transformations before pixel comparison or combining products—the SDEM's stated projection/coordinate basis differs in description from the older LOLA product page's MOON_ME/DE421 metadata. Do not assume identical pixel grids simply because both say 5 m/pixel.
+
+This SDEM is complementary rather than automatically authoritative: its added detail depends on image coverage and illumination geometry. A useful research result would measure how the candidate skyline and predicted visibility windows change between LDEM and SDEM at a matched point.
+
+Sources: [NASA PGDA SDEM product](https://pgda.gsfc.nasa.gov/products/104), [Zenodo regional SDEM archive](https://zenodo.org/records/17954508), and [peer-reviewed product paper](https://doi.org/10.3847/PSJ/ae5b70).
+
 ### Long-term polar illumination and Earth-visibility products
 
 The standard NASA PGDA / PDS polar products offer maps at 240, 120, and 60 m/pixel, depending on latitude coverage. The documented illumination averages span about 18.6 years and use hourly model steps. The product family also includes permanent-shadow, sky-visibility, and Earth-visibility maps. TIF and Cloud-Optimized GeoTIFF variants are linked; NASA cautions that zoomed-out COG views can display averaged overview layers, which should not be used for quantitative pixel extraction.
@@ -52,7 +64,8 @@ A defensible staged output is:
 2. **Terrain horizon:** Transform nearby LOLA elevations into a consistent lunar surface geometry, derive a direction-dependent skyline, and compare target elevation with the skyline at matching azimuth. State the DEM radius, effective resolution, observer height, and no-data handling.
 3. **Disc-aware visibility (if feasible):** Model the finite solar or Earth disc rather than relying only on its centre. For Earth, label partial-disc geometric visibility separately from a communications link to a particular station.
 4. **Uncertainty check:** Repeat terrain calculations on suitable LOLA clones or perturbations and report spread only after validating that the clone ensemble can be processed consistently.
-5. **Aggregate check:** Compare with GDRVIS only after aligning the time range and visibility definition.
+5. **DEM sensitivity:** For Malapert, compare horizons from the LOLA LDEM and SDEM over matched coverage; report grid alignment and no-data differences before interpreting the result.
+6. **Aggregate check:** Compare with GDRVIS only after aligning the time range and visibility definition.
 
 A local azimuth/range skyline approximation may be useful for a small region, but wide-radius terrain should be mapped into a consistent lunar body-fixed/3D geometry before ray or horizon calculations. Do not treat polar stereographic map X/Y as global Cartesian surface coordinates without accounting for the projection and Moon shape.
 
@@ -64,6 +77,7 @@ Add or clarify these benchmark rules:
 - **Terrain-window boundary error:** Define whether a boundary means centre-disc crossing, any-partial-disc visibility, or full-disc visibility. Use the same rule in the implementation and reference.
 - **Aggregate illumination difference:** Match the product's long time span and hourly sampling as well as possible; compare compatible pixels and elevation assumptions. Do not use this metric to claim accurate boundaries for one selected date.
 - **Terrain uncertainty sensitivity:** Across valid DEM clones or a clearly defined perturbation ensemble, measure changes in horizon angle and window duration. Report the distribution and sampled cases, not just its mean.
+- **DEM model sensitivity:** At Malapert, compare LDEM and SDEM horizon angles/window durations only over the same point, time cases, and common supported area; document registration and resolution assumptions.
 - **Runtime and usability:** Report hardware, DEM size, spatial sampling, and whether calculations were cached.
 
 No benchmark results have been measured yet.
@@ -73,6 +87,7 @@ No benchmark results have been measured yet.
 Before the first scientific endpoint is added, the researcher should:
 
 - Download only the small required product subset from PGDA/PDS and preserve its labels/README.
+- For Malapert SDEM work, download only the regional archive if disk space permits; never add the 2.2 GB archive to Git.
 - Record the exact file names, access date, projection, reference frame, height units, no-data values, scale/offset, extent, and checksums.
 - Inspect whether the Site23 ROI exists outside the page's visible linked products; do not infer its availability.
 - Choose one explicit point per site and record how it was selected.
