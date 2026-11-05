@@ -6,36 +6,35 @@ Central workspace for our NASA Space Apps 2026 challenge research, prototype, ev
 
 ## Project status
 
-We are in the research and prototype-planning stage. Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities.
+We are in the research and prototype-planning stage. The static interface is deployed on GitHub Pages. A Docker-based API and private data-science workspace are now scaffolded, but no validated lunar calculations are implemented yet.
 
-LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed staged method is documented in [Method decision note](docs/METHOD_DECISION.md). The calculation pipeline and accuracy have **not** yet been validated.
+Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities. LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed method is documented in [Method decision note](docs/METHOD_DECISION.md).
 
 ## Repository map
 
 - [Research draft](docs/RESEARCH_DRAFT.md) — challenge framing, definitions, and current data assessment
 - [Method decision](docs/METHOD_DECISION.md) — evidence-based route for geometric positions, terrain visibility, and aggregate checks
-- [Sources](docs/SOURCES.md) — annotated source register and relevance decisions
-- [Team research brief](docs/TEAM_BRIEF.md) — identical workflow and deliverables for each member
+- [Sources](docs/SOURCES.md) — annotated NASA, PDS, and JPL references
+- [Team research brief](docs/TEAM_BRIEF.md) — shared workflow and deliverables for every member
 - [Benchmark plan](docs/BENCHMARK_PLAN.md) — proposed accuracy, usability, and runtime measures
+- [Deployment guide](docs/DEPLOYMENT.md) — run the Docker API, private notebook environment, and optional HTTPS tunnel
 - [Project page](docs/index.html) — GitHub Pages landing page
-- [Prototype](docs/prototype/index.html) — interactive UI demonstrator using clearly labeled synthetic data
-- `.github/workflows/deploy-pages.yml` — GitHub Pages deployment workflow
+- [Prototype](docs/prototype/index.html) — interactive UI demo with clearly labeled synthetic values
+- `compose.yaml` and `backend/` — local API and optional JupyterLab Docker services
 
 ## Run the prototype locally
 
 Open `docs/prototype/index.html` in a browser. It is a static demo and has no package installation requirement.
 
-> **Scientific status:** Prototype values are synthetic and demonstrate interaction only. They are not NASA measurements, ephemeris results, site recommendations, or validated illumination/communications predictions.
+## Backend and research environment
+
+See [Deployment guide](docs/DEPLOYMENT.md). Docker Compose starts a loopback-only API; the optional JupyterLab service is also local-only and requires a secret token in `.env`. A public HTTPS tunnel is needed for GitHub Pages visitors to reach the API while your machine is awake and online.
+
+The API currently exposes a health check only. It deliberately reports that science calculations are not ready. The prototype's numbers remain synthetic.
 
 ## GitHub Pages
 
-In the repository, open **Settings → Pages**, choose **GitHub Actions** as the build and deployment source, and save. The workflow publishes the `docs/` directory.
-
-The first workflow run is currently failing because Pages has not been enabled for this repository yet. After choosing **GitHub Actions** in Settings → Pages, open **Actions**, select the failed “Deploy project site” run, and choose **Re-run jobs**. Later pushes to `docs/` will publish automatically.
-
-The expected site URL is:
-
-`https://m9nx.github.io/lunar-landing-site-navigator/`
+The project page is published at [https://m9nx.github.io/lunar-landing-site-navigator/](https://m9nx.github.io/lunar-landing-site-navigator/). GitHub Actions deploys changes from `docs/` automatically.
 
 ## Data policy
 
