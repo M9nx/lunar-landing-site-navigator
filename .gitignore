@@ -1,0 +1,17 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+
+# Large mission datasets and generated outputs
+data/*
+!data/README.md
+!data/.gitkeep
+research/outputs/
+
+# Python and Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
