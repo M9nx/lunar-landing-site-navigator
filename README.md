@@ -28,7 +28,11 @@ Open `docs/prototype/index.html` in a browser. It is a static demo and has no pa
 
 ## GitHub Pages
 
-In the repository, open **Settings → Pages**, choose **GitHub Actions** as the build and deployment source, and save. The workflow publishes the `docs/` directory. The site URL will be:
+In the repository, open **Settings → Pages**, choose **GitHub Actions** as the build and deployment source, and save. The workflow publishes the `docs/` directory.
+
+The first workflow run is currently failing because Pages has not been enabled for this repository yet. After choosing **GitHub Actions** in Settings → Pages, open **Actions**, select the failed “Deploy project site” run, and choose **Re-run jobs**. Later pushes to `docs/` will publish automatically.
+
+The expected site URL is:
 
 `https://m9nx.github.io/lunar-landing-site-navigator/`
 
