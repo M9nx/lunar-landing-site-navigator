@@ -5,8 +5,10 @@
 main{max-width:1120px;margin:auto;padding:54px 24px 70px}.intro{max-width:700px}.kicker{color:var(--cyan);font-size:.72rem;font-weight:800;letter-spacing:.16em}
 h1{font-size:clamp(2.8rem,7vw,5.5rem);letter-spacing:-.06em;line-height:.99;margin:18px 0}h2{letter-spacing:-.025em;margin:.35em 0;font-size:1.3rem}
 .intro p,.explain p{color:var(--muted);max-width:640px;font-size:1.05rem}
-.synthetic-alert{margin:32px 0 18px;padding:14px 17px;border:1px solid #66532f;background:#211b11;border-radius:12px;display:flex;gap:14px;align-items:flex-start;color:#f2dfb8}
+.synthetic-alert{margin:32px 0 12px;padding:14px 17px;border:1px solid #66532f;background:#211b11;border-radius:12px;display:flex;gap:14px;align-items:flex-start;color:#f2dfb8}
 .synthetic-alert strong{color:var(--gold);font-size:.75rem;letter-spacing:.08em;white-space:nowrap}.synthetic-alert span{font-size:.88rem}
+.backend-status{margin:0 0 18px;padding:10px 14px;border:1px solid var(--line);background:var(--panel);border-radius:10px;color:var(--muted);font-size:.82rem}
+.backend-status.online{border-color:#28644f;color:var(--green)}.backend-status.offline{border-color:#66532f;color:var(--gold)}
 .controls{display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;gap:12px;background:var(--panel);border:1px solid var(--line);padding:16px;border-radius:15px}
 label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:.76rem;font-weight:700;letter-spacing:.04em}
 select,input[type=date]{width:100%;padding:11px;background:#0a1220;border:1px solid #2a3b52;border-radius:9px;color:var(--white);font:inherit}
@@ -15,7 +17,7 @@ select,input[type=date]{width:100%;padding:11px;background:#0a1220;border:1px so
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}.site-card,.chart-card{background:linear-gradient(145deg,#111d2d,#0e1724);border:1px solid var(--line);border-radius:16px;padding:22px}
 .site-heading{display:flex;justify-content:space-between;gap:12px;align-items:start}.site-heading h2{margin:4px 0}.site-id{color:var(--cyan);font-size:.7rem;letter-spacing:.12em;font-weight:800}.demo-chip{border:1px solid #6a552a;color:var(--gold);border-radius:999px;padding:4px 8px;font-size:.65rem;white-space:nowrap}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.metric{border-top:1px solid #26354a;padding-top:12px}.metric small{display:block;color:var(--muted);font-size:.7rem}.metric strong{display:block;font-size:1.2rem;margin-top:3px}.state{font-size:.72rem;margin-top:3px}.positive{color:var(--green)}.negative{color:var(--red)}
-.chart-card{margin-top:16px} .chart-heading{display:flex;justify-content:space-between;gap:20px;align-items:center}.legend{display:flex;gap:12px;color:var(--muted);font-size:.76rem}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.legend .sun{background:var(--gold)}.legend .earth{background:var(--cyan)}
+.chart-card{margin-top:16px}.chart-heading{display:flex;justify-content:space-between;gap:20px;align-items:center}.legend{display:flex;gap:12px;color:var(--muted);font-size:.76rem}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.legend .sun{background:var(--gold)}.legend .earth{background:var(--cyan)}
 svg{width:100%;height:auto;margin-top:14px;overflow:visible}.gridlines path{stroke:#26354a;stroke-width:1}.axis-labels{fill:#71829a;font-size:11px}.line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.sun-line{stroke:var(--gold)}.earth-line{stroke:var(--cyan)}.cursor-line{stroke:#fff;stroke-width:1;stroke-dasharray:4 5;opacity:.55}.chart-note{color:#8291a5;font-size:.76rem}
 .explain{border-top:1px solid #1c293b;margin-top:42px;padding-top:25px}.explain h2{font-size:1.45rem}.explain a,.footer a{color:var(--cyan);text-decoration:none}.footer{text-align:center;border-top:1px solid #172338;padding:20px;color:#71829a;font-size:.76rem}
 @media(max-width:760px){.controls{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}.chart-heading{align-items:start;flex-direction:column}.tag{display:none}}
