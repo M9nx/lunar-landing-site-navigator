@@ -8,9 +8,11 @@
 - JupyterLab is an optional local research environment. It stays bound to your own computer and is not routed through the public tunnel.
 - The API currently reports service health only. It does not calculate Sun/Earth geometry, terrain visibility, illumination, or communication windows.
 
-## Start the API locally
+## Prepare the local environment
 
-From the repository root:
+From the repository root, copy `.env.example` to `.env` and replace the example value with a long random token. Compose requires this token even when starting only the API, to ensure the notebook service cannot accidentally run without authentication. Do not commit `.env`.
+
+## Start the API locally
 
 ```sh
 docker compose up --build -d api
@@ -20,13 +22,13 @@ Check `http://127.0.0.1:8000/health`. The response must include `"status": "ok"`
 
 ## Start the private research environment
 
-Copy `.env.example` to `.env`, set a long random `JUPYTER_TOKEN`, then run:
+When needed, start the optional research profile:
 
 ```sh
 docker compose --profile research up --build
 ```
 
-Open `http://127.0.0.1:8888` locally. Do not publish or tunnel this port. Mission data under `data/` is mounted read-only inside both containers.
+Open `http://127.0.0.1:8888` locally and enter your token. Do not publish or tunnel this port. Mission data under `data/` is mounted read-only inside both containers.
 
 ## Connect the Pages demo
 
