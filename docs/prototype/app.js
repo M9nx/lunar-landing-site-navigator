@@ -61,7 +61,7 @@ function render() {
 async function updateBackendStatus() {
   const baseUrl = window.NAVIGATOR_CONFIG?.apiBaseUrl?.replace(/\/$/, "");
   if (!baseUrl) {
-    backendStatus.className = "backend-status offline";
+    backendStatus.className = "status-chip offline";
     backendStatus.textContent = "Backend not connected · showing synthetic demo values only.";
     return;
   }
@@ -69,12 +69,12 @@ async function updateBackendStatus() {
     const response = await fetch(`${baseUrl}/health`, { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error("Health endpoint returned an error");
     const health = await response.json();
-    backendStatus.className = "backend-status online";
+    backendStatus.className = "status-chip online";
     backendStatus.textContent = health.science_calculations_ready
       ? "API reachable · science readiness reported by API; results still require validation."
       : "API reachable · science calculations are not ready. Values below remain synthetic.";
   } catch {
-    backendStatus.className = "backend-status offline";
+    backendStatus.className = "status-chip offline";
     backendStatus.textContent = "Backend unavailable · showing synthetic demo values only.";
   }
 }
