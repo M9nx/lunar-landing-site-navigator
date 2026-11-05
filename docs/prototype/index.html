@@ -19,6 +19,7 @@
     <p>Explore how a future navigator could compare Sun and Earth visibility across candidate landing regions and times.</p>
   </section>
   <div class="synthetic-alert"><strong>SIMULATED DEMO</strong><span>All angles and indicators below are synthetic UI data. No ephemeris, LOLA terrain, or communications calculation is running.</span></div>
+  <div class="backend-status" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
   <section class="controls" aria-label="Comparison inputs">
     <label>Site A<select id="site-a"><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
     <label>Site B<select id="site-b"><option value="malapert">Malapert Massif</option><option value="shackleton">Shackleton rim</option></select></label>
@@ -40,10 +41,11 @@
   <section class="explain">
     <h2>What this prototype demonstrates</h2>
     <p>It demonstrates the comparison interaction and labels intended for a future data-backed tool. A validated version will need date-specific Sun/Earth geometry, documented coordinates and reference frames, and a stated horizon model. Terrain-clear visibility and radio-link availability must be distinguished.</p>
-    <a href="../RESEARCH_DRAFT.md">Read the research draft →</a>
+    <a href="../RESEARCH_DRAFT.md">Read the research draft →</a> · <a href="../DEPLOYMENT.md">Backend setup →</a>
   </section>
 </main>
 <footer class="footer">Project research prototype · <a href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/">Challenge brief</a></footer>
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
