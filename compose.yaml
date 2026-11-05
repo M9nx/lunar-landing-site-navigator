@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: ./backend
+      target: api
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://m9nx.github.io,http://localhost:8000,http://127.0.0.1:8000}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+    restart: unless-stopped
+
+  research:
+    build:
+      context: ./backend
+      target: research
+    profiles: ["research"]
+    environment:
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN:?Set JUPYTER_TOKEN in your .env file before starting the research profile}
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - ./research/notebooks:/workspace/notebooks
+      - ./data:/workspace/data:ro
+    restart: unless-stopped
