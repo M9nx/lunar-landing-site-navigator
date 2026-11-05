@@ -8,11 +8,12 @@ Central workspace for our NASA Space Apps 2026 challenge research, prototype, ev
 
 We are in the research and prototype-planning stage. Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities.
 
-The research has identified LOLA topography and visibility products as promising lunar data sources and JPL NAIF SPICE as a candidate for date-specific geometry. The calculation pipeline and accuracy have **not** yet been validated.
+LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed staged method is documented in [Method decision note](docs/METHOD_DECISION.md). The calculation pipeline and accuracy have **not** yet been validated.
 
 ## Repository map
 
 - [Research draft](docs/RESEARCH_DRAFT.md) — challenge framing, definitions, and current data assessment
+- [Method decision](docs/METHOD_DECISION.md) — evidence-based route for geometric positions, terrain visibility, and aggregate checks
 - [Sources](docs/SOURCES.md) — annotated source register and relevance decisions
 - [Team research brief](docs/TEAM_BRIEF.md) — identical workflow and deliverables for each member
 - [Benchmark plan](docs/BENCHMARK_PLAN.md) — proposed accuracy, usability, and runtime measures
