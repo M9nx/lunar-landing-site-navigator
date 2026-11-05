@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Rendered research notes for the Lunar Landing Site Navigator.">
+  <title>Documents · Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body class="theme-docs" data-page="research" data-root="">
+  <a class="skip-link" href="#doc-article">Skip to document</a>
+  <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
+  <header id="site-header" class="site-header"></header>
+  <div class="doc-shell">
+    <nav class="doc-nav" aria-label="Research notes">
+      <h2>Notes</h2>
+      <label class="visually-hidden" for="doc-select">Choose a document</label>
+      <select id="doc-select" class="doc-nav-select"></select>
+      <div id="doc-links" class="doc-links"></div>
+    </nav>
+    <article id="doc-article" class="doc-article" aria-live="polite">
+      <p class="doc-loading">Loading document…</p>
+    </article>
+    <aside class="doc-toc" aria-label="On this page">
+      <h2>On this page</h2>
+      <div id="doc-toc-list"></div>
+    </aside>
+  </div>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/lib/marked.umd.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
+  <script src="assets/js/site.js" defer></script>
+  <script src="assets/js/markdown.js" defer></script>
+</body>
+</html>

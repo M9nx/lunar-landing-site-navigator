@@ -3,37 +3,205 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="NASA Space Apps 2026 Lunar Landing Site Navigator research and prototype.">
+  <meta name="description" content="NASA Space Apps 2026 team workspace for comparing lunar landing sites through Sun and Earth geometry research.">
   <title>Lunar Landing Site Navigator</title>
-  <style>
-    :root{color-scheme:dark;--bg:#08111e;--panel:#101d30;--line:#253956;--text:#edf4ff;--muted:#a9b9ce;--cyan:#67d9ed;--gold:#f6c96b}
-    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#183456 0,transparent 36%),var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
-    main{max-width:980px;margin:auto;padding:64px 24px 90px}.eyebrow{color:var(--cyan);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
-    h1{font-size:clamp(2.5rem,7vw,5rem);line-height:1.02;max-width:780px;margin:.35em 0}p{color:var(--muted);max-width:760px}
-    .notice{border:1px solid #6b552a;background:#291f12;color:#f7e5bd;padding:14px 18px;border-radius:12px;margin:28px 0}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:30px 0}.card{background:var(--panel);border:1px solid var(--line);padding:20px;border-radius:16px}
-    .card h2{font-size:1.1rem;margin:0 0 8px}.card p{font-size:.92rem;margin:0 0 16px}
-    a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.button{display:inline-block;border:1px solid #2c647a;background:#102b3d;padding:11px 16px;border-radius:10px;font-weight:700}
-    footer{margin-top:54px;color:var(--muted);font-size:.9rem}
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/site.css">
 </head>
-<body>
-<main>
-  <div class="eyebrow">NASA Space Apps Challenge · 2026</div>
-  <h1>Lunar Landing Site Navigator</h1>
-  <p>A team research hub and early prototype for comparing lunar landing sites and dates through local Sun and Earth geometry, illumination, and direct-to-Earth visibility.</p>
-  <div class="notice"><strong>Research prototype:</strong> The interactive demo currently uses synthetic values to demonstrate the interface. Its API scaffold reports availability only; real lunar geometry and terrain visibility are not implemented yet.</div>
-  <a class="button" href="prototype/">Open the interactive prototype</a>
-  <section class="grid" aria-label="Project resources">
-    <article class="card"><h2>Research draft</h2><p>Challenge framing, science terms, candidate datasets, and current limitations.</p><a href="RESEARCH_DRAFT.md">Read the draft →</a></article>
-    <article class="card"><h2>Research update</h2><p>Verified LOLA file inventory, visibility definitions, and data-science decisions.</p><a href="RESEARCH_UPDATE.md">Read findings →</a></article>
-    <article class="card"><h2>Method decision</h2><p>Evidence-based route for selected-time geometry, terrain visibility, and aggregate checks.</p><a href="METHOD_DECISION.md">Review the method →</a></article>
-    <article class="card"><h2>Sources</h2><p>Annotated NASA, PDS, and JPL references with relevance notes.</p><a href="SOURCES.md">Browse sources →</a></article>
-    <article class="card"><h2>Team brief</h2><p>Shared instructions so every member completes the same research workflow.</p><a href="TEAM_BRIEF.md">Open team brief →</a></article>
-    <article class="card"><h2>Benchmark plan</h2><p>Proposed accuracy, usability, and runtime metrics; no results claimed yet.</p><a href="BENCHMARK_PLAN.md">Review metrics →</a></article>
-    <article class="card"><h2>Docker backend</h2><p>Run the API and private notebook environment, then optionally connect Pages through an HTTPS tunnel.</p><a href="DEPLOYMENT.md">Open deployment guide →</a></article>
-  </section>
-  <footer>Data sources and assumptions are documented in the research files. Large mission datasets should be downloaded from their authoritative archives rather than stored in this repository.</footer>
-</main>
+<body data-page="overview" data-root="">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
+  <header id="site-header" class="site-header"></header>
+  <main id="main">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="kicker">Mission hub · Research prototype</p>
+          <h1>Compare the lunar sky from the surface.</h1>
+          <p class="lead">A team research hub and early interface for comparing candidate landing sites and dates through local Sun and Earth geometry, illumination, and direct-to-Earth visibility.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="prototype/">Open the prototype <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="documents.html?doc=RESEARCH_DRAFT.md">Read the research</a>
+          </div>
+        </div>
+        <aside class="polar-panel" aria-label="Illustrative south-polar site map">
+          <div class="polar-meta"><span>South polar schematic</span><span>Not to scale</span></div>
+          <svg class="polar-svg" viewBox="0 0 420 420" role="img" aria-label="Illustrative south pole grid with two candidate regions marked">
+            <rect width="420" height="420" fill="#0b0b0e"/>
+            <g fill="none" stroke="#2c2c34" stroke-width="1">
+              <circle cx="210" cy="210" r="48"/>
+              <circle cx="210" cy="210" r="96"/>
+              <circle cx="210" cy="210" r="144"/>
+              <circle cx="210" cy="210" r="186"/>
+              <path d="M210 18V402 M18 210H402 M78 78L342 342 M342 78L78 342"/>
+            </g>
+            <circle cx="210" cy="210" r="4" fill="#d83933"/>
+            <circle cx="258" cy="132" r="7" fill="#e3b34a"/>
+            <circle cx="168" cy="268" r="7" fill="#5ba8d8"/>
+            <text x="270" y="128" fill="#e3b34a" font-size="11" font-family="DM Mono, monospace">SITE04</text>
+            <text x="84" y="274" fill="#5ba8d8" font-size="11" font-family="DM Mono, monospace">SITE23</text>
+            <text x="198" y="204" fill="#8d8d92" font-size="9" font-family="DM Mono, monospace">90°S</text>
+          </svg>
+          <p class="polar-caption">Illustrative markers for Shackleton rim and Malapert Massif. Coordinates are not selected landing points.</p>
+        </aside>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="alert" role="status">
+        <div>
+          <strong>Research prototype</strong>
+          <p>The interactive demo uses synthetic values to show the comparison interface. The API reports availability only. Validated lunar geometry, terrain visibility, illumination, and communication windows are not implemented.</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="band band-black" aria-labelledby="snapshot-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Mission snapshot</p>
+            <h2 id="snapshot-title">Where the workspace stands</h2>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat warn">
+            <small>Science products</small>
+            <strong>Not ready</strong>
+            <div class="state">No validated geometry yet</div>
+          </div>
+          <div class="stat" id="api-stat">
+            <small>API health</small>
+            <strong id="api-stat-value">Checking</strong>
+            <div class="state" id="api-stat-note">Service availability only</div>
+          </div>
+          <div class="stat">
+            <small>Interface</small>
+            <strong>Synthetic demo</strong>
+            <div class="state">Values labeled in the prototype</div>
+          </div>
+          <div class="stat">
+            <small>Data archives</small>
+            <strong>Documented</strong>
+            <div class="state">LOLA / PDS / SPICE notes</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-carbon" aria-labelledby="explore-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Explore</p>
+            <h2 id="explore-title">Research, method, and operations</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Research draft</h3>
+            <p>Challenge framing, science terms, candidate datasets, and current limitations.</p>
+            <a class="card-link" href="documents.html?doc=RESEARCH_DRAFT.md">Read the draft</a>
+          </article>
+          <article class="card">
+            <h3>Research update</h3>
+            <p>Verified LOLA file inventory, visibility definitions, and data-science decisions.</p>
+            <a class="card-link" href="documents.html?doc=RESEARCH_UPDATE.md">Read findings</a>
+          </article>
+          <article class="card">
+            <h3>Method decision</h3>
+            <p>Evidence-based route for selected-time geometry, terrain visibility, and aggregate checks.</p>
+            <a class="card-link" href="documents.html?doc=METHOD_DECISION.md">Review the method</a>
+          </article>
+          <article class="card">
+            <h3>Sources</h3>
+            <p>Annotated NASA, PDS, and JPL references with relevance notes.</p>
+            <a class="card-link" href="documents.html?doc=SOURCES.md">Browse sources</a>
+          </article>
+          <article class="card">
+            <h3>Team brief</h3>
+            <p>Shared instructions so every member completes the same research workflow.</p>
+            <a class="card-link" href="documents.html?doc=TEAM_BRIEF.md">Open team brief</a>
+          </article>
+          <article class="card">
+            <h3>Benchmark plan</h3>
+            <p>Proposed accuracy, usability, and runtime metrics. No results claimed yet.</p>
+            <a class="card-link" href="documents.html?doc=BENCHMARK_PLAN.md">Review metrics</a>
+          </article>
+          <article class="card">
+            <h3>Docker backend</h3>
+            <p>Run the API and private notebook environment, then optionally connect Pages through an HTTPS tunnel.</p>
+            <a class="card-link" href="documents.html?doc=DEPLOYMENT.md">Open deployment guide</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-ink" aria-labelledby="approach-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Approach</p>
+            <h2 id="approach-title">How the comparison is intended to work</h2>
+          </div>
+        </div>
+        <div class="step-grid">
+          <article class="step">
+            <div class="step-num">01</div>
+            <h3>Select sites and time</h3>
+            <p>Users compare documented south-polar regions and a sample date. Exact landing coordinates still have to be chosen from archive ROIs.</p>
+          </article>
+          <article class="step">
+            <div class="step-num">02</div>
+            <h3>Compute local sky geometry</h3>
+            <p>A future validated pipeline will use SPICE kernels and lunar frames to place the Sun and Earth against the local horizon.</p>
+          </article>
+          <article class="step">
+            <div class="step-num">03</div>
+            <h3>Keep terrain and links distinct</h3>
+            <p>Geometric elevation is not terrain-clear sunlight, and Earth visibility is not a radio-link budget. Labels in the demo keep that boundary visible.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-black">
+      <div class="wrap limit-box">
+        <p class="section-kicker">Limitation</p>
+        <h2>A reachable API is not a scientific result</h2>
+        <p>Keep synthetic demo labels visible until a reproducible pipeline, validated data products, and benchmark evidence replace them. Data sources and assumptions are documented in the research files. Large mission datasets should be downloaded from their authoritative archives rather than stored in this repository.</p>
+        <p><a href="documents.html?doc=SOURCES.md">View the source register →</a></p>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="prototype/config.js"></script>
+  <script src="assets/js/site.js"></script>
+  <script>
+    (async function () {
+      const value = document.getElementById("api-stat-value");
+      const note = document.getElementById("api-stat-note");
+      const stat = document.getElementById("api-stat");
+      const baseUrl = window.NAVIGATOR_CONFIG?.apiBaseUrl?.replace(/\/$/, "");
+      if (!baseUrl) {
+        value.textContent = "Not connected";
+        return;
+      }
+      try {
+        const response = await fetch(`${baseUrl}/health`, { headers: { Accept: "application/json" } });
+        const health = await response.json();
+        value.textContent = "Reachable";
+        stat.classList.add("online");
+        note.textContent = health.science_calculations_ready
+          ? "Science still requires validation"
+          : "Calculations are not implemented";
+      } catch {
+        value.textContent = "Unavailable";
+        note.textContent = "Tunnel or local API is offline";
+      }
+    })();
+  </script>
 </body>
 </html>

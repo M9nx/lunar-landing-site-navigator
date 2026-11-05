@@ -5,47 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Synthetic UI prototype for comparing lunar site geometry.">
   <title>Site comparison · Lunar Landing Site Navigator</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
 </head>
-<body>
-<header class="topbar">
-  <a class="brand" href="../">LUNAR<span> / NAVIGATOR</span></a>
-  <span class="tag">NASA SPACE APPS · 2026</span>
-</header>
-<main>
-  <section class="intro">
-    <div class="kicker">SITE COMPARISON · EARLY PROTOTYPE</div>
-    <h1>Compare the sky<br>from the lunar surface.</h1>
-    <p>Explore how a future navigator could compare Sun and Earth visibility across candidate landing regions and times.</p>
-  </section>
-  <div class="synthetic-alert"><strong>SIMULATED DEMO</strong><span>All angles and indicators below are synthetic UI data. No ephemeris, LOLA terrain, or communications calculation is running.</span></div>
-  <div class="backend-status" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
-  <section class="controls" aria-label="Comparison inputs">
-    <label>Site A<select id="site-a"><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
-    <label>Site B<select id="site-b"><option value="malapert">Malapert Massif</option><option value="shackleton">Shackleton rim</option></select></label>
-    <label>Date<input id="date" type="date" value="2026-11-14"></label>
-    <label class="time-control">Sample time <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12"></label>
-  </section>
-  <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample</span><span>23:00</span></div>
-  <section class="cards" id="results" aria-live="polite"></section>
-  <section class="chart-card">
-    <div class="chart-heading"><div><div class="kicker">SYNTHETIC CURVE</div><h2>Illustrative elevation through the sample interval</h2></div><div class="legend"><span><i class="sun"></i>Sun</span><span><i class="earth"></i>Earth</span></div></div>
-    <svg id="chart" viewBox="0 0 800 250" role="img" aria-label="Synthetic Sun and Earth elevation curves">
-      <g class="gridlines"><path d="M55 30H780 M55 82H780 M55 134H780 M55 186H780 M55 220H780"/></g>
-      <g class="axis-labels"><text x="12" y="34">+15°</text><text x="25" y="86">+7.5°</text><text x="38" y="138">0°</text><text x="20" y="190">−7.5°</text><text x="31" y="224">−12°</text><text x="55" y="244">00</text><text x="410" y="244">12</text><text x="760" y="244">23</text></g>
-      <path id="sun-line" class="line sun-line"></path><path id="earth-line" class="line earth-line"></path>
-      <path id="cursor-line" class="cursor-line" d="M 438 25 V 220"></path>
-    </svg>
-    <p class="chart-note">The plotted curves are illustrative only and must not be used for mission planning.</p>
-  </section>
-  <section class="explain">
-    <h2>What this prototype demonstrates</h2>
-    <p>It demonstrates the comparison interaction and labels intended for a future data-backed tool. A validated version will need date-specific Sun/Earth geometry, documented coordinates and reference frames, and a stated horizon model. Terrain-clear visibility and radio-link availability must be distinguished.</p>
-    <a href="../RESEARCH_DRAFT.md">Read the research draft →</a> · <a href="../DEPLOYMENT.md">Backend setup →</a>
-  </section>
-</main>
-<footer class="footer">Project research prototype · <a href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/">Challenge brief</a></footer>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<body data-page="prototype" data-root="../">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
+  <header id="site-header" class="site-header"></header>
+  <main id="main" class="wrap">
+    <section class="page-hero">
+      <p class="kicker">Site comparison · Early prototype</p>
+      <h1>Compare two lunar regions at a sample time.</h1>
+      <p>Explore how a future navigator could compare Sun and Earth visibility across candidate landing regions and times. The numbers below are interface placeholders.</p>
+    </section>
+    <div class="alert console-alert" role="status">
+      <div>
+        <strong>Simulated demo</strong>
+        <p>All angles and indicators below are synthetic UI data. No ephemeris, LOLA terrain, or communications calculation is running.</p>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
+    </div>
+    <section class="controls" aria-label="Comparison inputs">
+      <label>Site A<select id="site-a"><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
+      <label>Site B<select id="site-b"><option value="malapert">Malapert Massif</option><option value="shackleton">Shackleton rim</option></select></label>
+      <label>Date<input id="date" type="date" value="2026-11-14"></label>
+      <label class="time-control">Sample time <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12"></label>
+    </section>
+    <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample</span><span>23:00</span></div>
+    <section class="cards" id="results" aria-live="polite"></section>
+    <section class="chart-card">
+      <div class="chart-heading">
+        <div>
+          <div class="kicker">Synthetic curve</div>
+          <h2>Illustrative elevation through the sample interval</h2>
+        </div>
+        <div class="legend"><span><i class="sun"></i>Sun</span><span><i class="earth"></i>Earth</span></div>
+      </div>
+      <svg id="chart" viewBox="0 0 800 250" role="img" aria-label="Synthetic Sun and Earth elevation curves">
+        <g class="gridlines"><path d="M55 30H780 M55 82H780 M55 134H780 M55 186H780 M55 220H780"/></g>
+        <g class="axis-labels"><text x="12" y="34">+15°</text><text x="25" y="86">+7.5°</text><text x="38" y="138">0°</text><text x="20" y="190">−7.5°</text><text x="31" y="224">−12°</text><text x="55" y="244">00</text><text x="410" y="244">12</text><text x="760" y="244">23</text></g>
+        <path id="sun-line" class="line sun-line"></path>
+        <path id="earth-line" class="line earth-line"></path>
+        <path id="cursor-line" class="cursor-line" d="M 438 25 V 220"></path>
+      </svg>
+      <p class="chart-note">The plotted curves are illustrative only and must not be used for mission planning.</p>
+    </section>
+    <section class="explain">
+      <h2>What this prototype demonstrates</h2>
+      <p>It demonstrates the comparison interaction and labels intended for a future data-backed tool. A validated version will need date-specific Sun and Earth geometry, documented coordinates and reference frames, and a stated horizon model. Terrain-clear visibility and radio-link availability must be distinguished.</p>
+      <p><a href="../documents.html?doc=RESEARCH_DRAFT.md">Read the research draft →</a> · <a href="../documents.html?doc=DEPLOYMENT.md">Backend setup →</a></p>
+    </section>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="../assets/js/site.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
