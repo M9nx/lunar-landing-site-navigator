@@ -14,4 +14,4 @@ FROM base AS research
 RUN pip install --no-cache-dir jupyterlab numpy pandas matplotlib spiceypy
 WORKDIR /workspace
 EXPOSE 8888
-CMD ["sh", "-c", "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.allow_remote_access=True --ServerApp.token=\"$JUPYTER_TOKEN\""]
+CMD ["sh", "-c", "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.allow_remote_access=True --ServerApp.token=\"$JUPYTER_TOKEN\""]
