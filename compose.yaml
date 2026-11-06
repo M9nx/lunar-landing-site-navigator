@@ -47,7 +47,7 @@ services:
       - "127.0.0.1:8001:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - jupyterhub-hub-db:/srv/jupyterhub
+      - jupyterhub-hub-db:/var/lib/jupyterhub
       - ${HOST_SHARED_NOTEBOOKS:-./research/notebooks}:${HOST_SHARED_NOTEBOOKS:-./research/notebooks}:ro
       - ${HOST_DATA_PATH:-./data}:${HOST_DATA_PATH:-./data}:ro
     networks:

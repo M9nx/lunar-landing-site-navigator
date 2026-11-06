@@ -1,8 +1,17 @@
 """JupyterHub config — secrets and allowlists from environment only."""
 
+import importlib.util
 import os
+from pathlib import Path
 
-from hub_url_config import hub_oauth_callback_url, validate_hub_url_config
+_hub_cfg_path = Path(__file__).resolve().parent / "hub_url_config.py"
+_spec = importlib.util.spec_from_file_location("hub_url_config", _hub_cfg_path)
+if _spec is None or _spec.loader is None:
+    raise ImportError(f"Cannot load hub URL config from {_hub_cfg_path}")
+_hub_url = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_hub_url)
+hub_oauth_callback_url = _hub_url.hub_oauth_callback_url
+validate_hub_url_config = _hub_url.validate_hub_url_config
 
 validate_hub_url_config()
 
@@ -63,8 +72,8 @@ c.Spawner.start_timeout = int(os.environ.get("SPAWNER_START_TIMEOUT", "300"))
 
 # --- Hub ---
 c.JupyterHub.bind_url = "http://:8000"
-c.JupyterHub.cookie_secret_file = "/srv/jupyterhub/jupyterhub_cookie_secret"
-c.JupyterHub.db_url = os.environ.get("JUPYTERHUB_DB_URL", "sqlite:////srv/jupyterhub/jupyterhub.sqlite")
+c.JupyterHub.cookie_secret_file = "/var/lib/jupyterhub/jupyterhub_cookie_secret"
+c.JupyterHub.db_url = os.environ.get("JUPYTERHUB_DB_URL", "sqlite:////var/lib/jupyterhub/jupyterhub.sqlite")
 c.JupyterHub.cleanup_servers = True
 
 # Optional idle culler (enable in production): run jupyterhub-idle-culler as a Hub service

@@ -1,0 +1,17 @@
+# Cloudflare named tunnel (stable hostnames) — template only.
+# Create tunnel in Zero Trust dashboard, then:
+#   cloudflared tunnel create lunar-navigator
+#   cloudflared tunnel route dns lunar-navigator api.m9nx.me
+#   cloudflared tunnel route dns lunar-navigator hub.m9nx.me
+# Copy credentials JSON path below and run:
+#   cloudflared tunnel --config cloudflare-tunnel.yml run
+
+tunnel: lunar-navigator
+credentials-file: /path/to/lunar-navigator.json
+
+ingress:
+  - hostname: api.m9nx.me
+    service: http://127.0.0.1:8000
+  - hostname: hub.m9nx.me
+    service: http://127.0.0.1:8001
+  - service: http_status:404
