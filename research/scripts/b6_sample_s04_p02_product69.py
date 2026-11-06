@@ -103,8 +103,9 @@ def crs_transform_metadata(crs_a: CRS, crs_b: CRS) -> dict[str, Any]:
     fwd = Transformer.from_crs(crs_a, crs_b, always_xy=True)
     inv = Transformer.from_crs(crs_b, crs_a, always_xy=True)
     return {
-        "forward_description": getattr(fwd, "description", str(fwd)),
-        "inverse_description": getattr(inv, "description", str(inv)),
+        "forward_axis_order": "always_xy (eastings/northings map metres)",
+        "forward_site04_xy_to_product69_xy": getattr(fwd, "description", str(fwd)),
+        "inverse_product69_xy_to_site04_xy": getattr(inv, "description", str(inv)),
         "forward_accuracy_m": getattr(fwd, "accuracy", None),
         "inverse_accuracy_m": getattr(inv, "accuracy", None),
         "note": (
@@ -140,10 +141,11 @@ def dn_to_fraction(dn: float | int, nodata: float | None) -> dict[str, Any]:
 
 def neighborhood_stats(arr: np.ndarray, nodata: float | None) -> dict[str, Any]:
     flat = arr.astype(np.float64).ravel()
+    finite = np.isfinite(flat)
     if nodata is not None:
-        m = flat != float(nodata)
+        m = finite & (flat != float(nodata))
     else:
-        m = np.ones(flat.shape, dtype=bool)
+        m = finite
     v = flat[m]
     if v.size == 0:
         return {"valid_cell_count": 0, "raw_dn": None, "fraction": None}
@@ -200,6 +202,8 @@ def run_sample(
         arr = np.ma.filled(block.astype(np.float64), np.nan)
         if nd is not None:
             arr_ma = np.where(arr == float(nd), np.nan, arr)
+            # nodata may not be flagged on the raster mask; treat both as invalid
+            arr_ma = np.where(~np.isfinite(arr_ma), np.nan, arr_ma)
         else:
             arr_ma = arr
 
@@ -224,8 +228,13 @@ def run_sample(
                     continue
                 cx = trans.c + trans.a * (ci + 0.5) + trans.b * (ri + 0.5)
                 cy = trans.f + trans.d * (ci + 0.5) + trans.e * (ri + 0.5)
-                dnp = float(p69.read(1, window=Window(ci, ri, 1, 1))[0, 0])
-                info = dn_to_fraction(dnp, float(nd) if nd is not None else None)
+                cell = p69.read(1, window=Window(ci, ri, 1, 1), masked=True)
+                cell_arr = cell.astype(np.float64)
+                if np.ma.is_masked(cell_arr) or bool(np.ma.getmaskarray(cell_arr)[0, 0]):
+                    info = dn_to_fraction(float("nan"), float(nd) if nd is not None else None)
+                else:
+                    dnp = float(np.asarray(cell_arr)[0, 0])
+                    info = dn_to_fraction(dnp, float(nd) if nd is not None else None)
                 neigh.append(
                     {
                         "drow": dr,
@@ -261,7 +270,11 @@ def run_sample(
             "site04_row_col_centre": [int(row_s), int(col_s)],
             "site04_lon_lat_deg_at_centre": [float(lon0), float(lat0)],
             **crs_payload,
-            "product69_crs_to_site04_xy_transform": meta_tie,
+            "site04_map_xy_to_product69_map_xy_pyproj": {
+                "source_crs_role": "Site04 GeoTIFF projected CRS (S04-P02 map X/Y metres)",
+                "target_crs_role": "Product 69 GeoTIFF projected CRS (map X/Y metres)",
+                **meta_tie,
+            },
             "product69_map_xy_m_observer": [float(px_p), float(py_p)],
             "product69_pixel_centre_map_xy_m": [float(pcx), float(pcy)],
             "product69_row_col": [int(row_p), int(col_p)],
@@ -296,7 +309,10 @@ def main() -> int:
         "--review-date-utc",
         type=str,
         default=None,
-        help="ISO date YYYY-MM-DD (default: today UTC).",
+        help=(
+            "ISO date YYYY-MM-DD when owner reviewed the run. "
+            "Omit until review; default is pending (not run date — use run_utc)."
+        ),
     )
     args = p.parse_args()
 
@@ -321,7 +337,8 @@ def main() -> int:
         "owner_review_fields": {
             "reviewer": args.reviewer,
             "review_date_utc": args.review_date_utc
-            or datetime.now(timezone.utc).date().isoformat(),
+            if args.review_date_utc is not None
+            else "PENDING_OWNER_REVIEW",
             "b6_metric_confirmed": (
                 "Set to true in a signed run note only after owner confirms "
                 "average Earth-disc visibility is the intended B6 quantity."
@@ -366,7 +383,7 @@ Paths: see JSON `product69_path`, `site04_path`.
 
 ## CRS / transform
 
-See JSON `site04_crs_wkt`, `product69_crs_wkt`, and `product69_crs_to_site04_xy_transform` (check for Ballpark). Re-run with host `SCRIPT_GIT_COMMIT=$(git rev-parse HEAD)` if `script_git_commit` is null (e.g. minimal Docker image has no `git`).
+See JSON `site04_crs_wkt`, `product69_crs_wkt`, and `site04_map_xy_to_product69_map_xy_pyproj` (check for Ballpark). Re-run with host `SCRIPT_GIT_COMMIT=$(git rev-parse HEAD)` if `script_git_commit` is null (e.g. minimal Docker image has no `git`). Set `--review-date-utc` only after owner review (otherwise `review_date_utc` stays pending).
 
 ## S04-P02 sample
 
