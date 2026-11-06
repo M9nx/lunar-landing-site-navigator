@@ -336,9 +336,7 @@ def main() -> int:
         },
         "owner_review_fields": {
             "reviewer": args.reviewer,
-            "review_date_utc": args.review_date_utc
-            if args.review_date_utc is not None
-            else "PENDING_OWNER_REVIEW",
+            "review_date_utc": args.review_date_utc,
             "b6_metric_confirmed": (
                 "Set to true in a signed run note only after owner confirms "
                 "average Earth-disc visibility is the intended B6 quantity."
@@ -364,7 +362,7 @@ def main() -> int:
 |--------|--------|
 | Run UTC | {o["run_utc"]} |
 | Reviewer (fill) | {o["owner_review_fields"]["reviewer"]} |
-| Review date (UTC) | {o["owner_review_fields"]["review_date_utc"]} |
+| Review date (UTC) | {o["owner_review_fields"]["review_date_utc"] if o["owner_review_fields"]["review_date_utc"] else "pending (pass --review-date-utc after owner review)"} |
 | Script commit | `{o["script_git_commit"]}` |
 | Script file SHA-256 | `{o["script_file_sha256"]}` |
 | Host | `{o["host"]["platform"]}` |
