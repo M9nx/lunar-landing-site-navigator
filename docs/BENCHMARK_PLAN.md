@@ -122,6 +122,24 @@ docker run --rm \
 
 **B6:** Product 69 raster not on local `data/` — see `research/B6_PRODUCT69_BLOCKER.md`.
 
+## Sprint evidence — 2026-11-06 (bin 313 corridor, overlap dZ, B7)
+
+**Branch:** `sprint/b5-b7-evidence` (not merged). **Artifacts:** ignored `research-results/sprint-b5-b7-evidence-2026-11-06/`.
+
+| Script / file | Purpose |
+|----------------|---------|
+| `research/scripts/product90_ray_corridor_diagnostic.py` | Fixed-step probe along **bin-centre** ray; per pixel-centre applies **`assign_ray_bins`** (same gates as coverage diagnostic). CSV + JSON list assigned bin, mask, raw float. |
+| `research/scripts/b5_overlap_elevation_diagnostic.py` | Co-located **(B − A)** elevation on native grid of B after **average** resample A→B; CRS op strings recorded (**Ballpark** on Site04→80 m pair in this run — diagnostic only). |
+| `research/scripts/collect_b7_api_benchmark.sh` | `curl` timing for `/health` and `/v1/benchmark/status` (client round-trip; see JSON `interpretation`). |
+
+**Bin 313 / 80 m:** Corridor JSON reports `first_valid_assigned_along_m` ≈ **8362.5 m** and inner gap ≈ **3362.5 m** (matches `product90_ray_cov_80m_5k_100k.json` radial continuity). Along the centre line, nearest pixel centres often **assign to bin 312** (`status: assigned_to_bin_312_not_313`) until distance grows — consistent with **discrete 0.5° bins and 80 m posting**, not a transform bug.
+
+**Co-located overlap (this workspace):** Site04→80 m window: **40000** common valid cells; median **(80 m − aggregated Site04) ≈ 0.18 m**; transform description includes **Ballpark**. 80 m→240 m: **6416089** cells; median residual **0 m**; max |residual| in top list **≈ 18 m** — still **not** seam acceptance; no threshold applied.
+
+**B7:** Example `b7_api_benchmark.json`: 25× `curl` to loopback — if `/v1/benchmark/status` returns **404**, deploy API at commit that includes that route (squash merge #20 on `main`); `sqlite_ping_ms` is authoritative when the route exists.
+
+**Owner checklist:** `research/B5_OWNER_REVIEW_CHECKLIST.md`.
+
 ## Reporting template
 
 For each metric, report:

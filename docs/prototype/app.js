@@ -155,11 +155,14 @@ async function updateGatePanel() {
     const bench = bRes.ok ? await bRes.json() : null;
     const ready = health?.science_calculations_ready === true;
     const lines = [];
+    lines.push(
+      "Diagnostics (API health / DB ping) are not validated lunar geometry — charts below stay SYNTHETIC until the science gate is explicitly enabled."
+    );
     lines.push(`Science gate (SCIENCE_CALCULATIONS_READY): ${ready ? "true" : "false"} — validated compare still disabled.`);
     if (bench && bench.benchmark_kind) {
       lines.push(
-        `GET /v1/benchmark/status: sqlite_ping_ms=${bench.sqlite_ping_ms ?? "?"} · ` +
-          `${bench.interpretation || "infrastructure probe only"}`
+        `[Diagnostic] GET /v1/benchmark/status: sqlite_ping_ms=${bench.sqlite_ping_ms ?? "?"} — ` +
+          (bench.interpretation || "infrastructure probe only (not ephemeris or terrain).")
       );
     } else {
       lines.push(
@@ -167,7 +170,7 @@ async function updateGatePanel() {
       );
     }
     lines.push(
-      "POST /v1/compare remains 503 while the gate is false — by design; use Hub research scripts for diagnostics."
+      "[Not validated] POST /v1/compare returns 503 while the gate is false — by design; use Hub research scripts for terrain diagnostics."
     );
     gatePanel.textContent = lines.join(" ");
   } catch {
