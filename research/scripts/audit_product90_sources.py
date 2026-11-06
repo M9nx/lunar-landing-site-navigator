@@ -141,6 +141,40 @@ def find_first(paths: list[Path], pattern: str) -> Path | None:
     return None
 
 
+def axis_details(crs: CRS | None) -> list[dict[str, Any]] | None:
+    if crs is None:
+        return None
+    return [
+        {
+            "name": axis.name,
+            "abbreviation": axis.abbrev,
+            "direction": axis.direction,
+            "unit_name": axis.unit_name,
+            "unit_conversion_factor": axis.unit_conversion_factor,
+        }
+        for axis in crs.axis_info
+    ]
+
+
+def operation_details(crs: CRS | None) -> dict[str, Any] | None:
+    if crs is None or crs.coordinate_operation is None:
+        return None
+    operation = crs.coordinate_operation
+    return {
+        "name": operation.name,
+        "method_name": operation.method_name,
+        "parameters": [
+            {
+                "name": parameter.name,
+                "value": parameter.value,
+                "unit_name": parameter.unit_name,
+                "unit_conversion_factor": parameter.unit_conversion_factor,
+            }
+            for parameter in operation.params
+        ],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -199,9 +233,18 @@ def main() -> int:
         product = assets[filename]
         product_crs = CRS.from_wkt(product["crs_wkt"]) if product["crs_wkt"] else None
         crs_equal = bool(site04_crs and product_crs and site04_crs.equals(product_crs))
+        crs_equal_ignore_axis_order = bool(
+            site04_crs
+            and product_crs
+            and site04_crs.equals(product_crs, ignore_axis_order=True)
+        )
         crs_axis_info = {
-            "site04": [a.direction for a in site04_crs.axis_info] if site04_crs else None,
-            "product90": [a.direction for a in product_crs.axis_info] if product_crs else None,
+            "site04": axis_details(site04_crs),
+            "product90": axis_details(product_crs),
+        }
+        crs_operations = {
+            "site04": operation_details(site04_crs),
+            "product90": operation_details(product_crs),
         }
         if not site04_crs or not product_crs:
             point = {"error": "CRS missing; cannot transform fixed point."}
@@ -223,6 +266,7 @@ def main() -> int:
                 "residual_m": float(np.hypot(rx - POINT_X_M, ry - POINT_Y_M)),
             }
 
+            shared_samples: list[dict[str, Any]] = []
             # Sample a deterministic 5x5 set over the Site04 footprint, then
             # compare co-located elevations where both rasters have valid data.
             # Differences are diagnostic only: the surfaces have different
@@ -263,7 +307,9 @@ def main() -> int:
             ) if crs_equal else None
         candidate_results[filename] = {
             "crs_equals_site04": crs_equal,
-            "axis_directions": crs_axis_info,
+            "crs_equals_site04_ignore_axis_order": crs_equal_ignore_axis_order,
+            "axis_details": crs_axis_info,
+            "coordinate_operations": crs_operations,
             "observer_point_sample": point,
             "observer_point_roundtrip": roundtrip,
             "observer_xy_in_bounds_without_transform": inside_site04_bounds,
@@ -301,7 +347,7 @@ def main() -> int:
             "source": "docs/FRAME_GEOMETRY_VALIDATION.md",
         },
         "product90_assets": assets,
-        "candidate_checks": candidate_results,
+        "candidate_results": candidate_results,
         "compatibility_verdict": "blocked",
         "verdict_reason": (
             "This preflight records raster metadata, checksum, observer-point sampling, "
@@ -321,6 +367,7 @@ def main() -> int:
         print(
             filename,
             "CRS-equal=", result["crs_equals_site04"],
+            "CRS-equal-ignore-axis=", result["crs_equals_site04_ignore_axis_order"],
             "observer-valid=", result["observer_point_sample"].get("is_valid"),
             "shared-valid=", result["shared_area_valid_sample_count"], "/ 25",
             "meanings: diagnostic only; compatibility verdict remains blocked",
