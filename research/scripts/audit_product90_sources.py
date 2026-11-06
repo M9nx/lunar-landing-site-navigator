@@ -17,6 +17,8 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
+import re
 from pathlib import Path
 import platform
 import sys
@@ -136,8 +138,95 @@ def _coordinate_operation_str(crs: CRS) -> str | None:
     return str(op)
 
 
+def _normalized_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _projection_signature(crs: CRS) -> dict[str, Any] | None:
+    operation = crs.coordinate_operation
+    if operation is None:
+        return None
+    parameters: dict[str, dict[str, Any]] = {}
+    for parameter in operation.params:
+        name = _normalized_name(parameter.name)
+        value = float(parameter.value)
+        factor = parameter.unit_conversion_factor
+        unit = parameter.unit_name or "unitless"
+        if factor is not None:
+            value *= float(factor)
+            unit = "SI"
+        if name in parameters:
+            return None
+        parameters[name] = {"value": value, "unit": unit}
+    return {
+        "method": _normalized_name(operation.method_name),
+        "parameters": parameters,
+    }
+
+
+def projection_parameters_comparison(
+    site: CRS | None, product: CRS | None
+) -> dict[str, Any]:
+    """Compare projection method/parameters and ellipsoid axes, excluding CRS labels/IDs."""
+    if site is None or product is None:
+        return {
+            "match": None,
+            "method_match": None,
+            "numeric_parameters_match": None,
+            "ellipsoid_axes_match": None,
+            "tolerance": "1e-9 in normalized units for operation parameters; 1e-6 m for axes",
+        }
+
+    site_signature = _projection_signature(site)
+    product_signature = _projection_signature(product)
+    if site_signature is None or product_signature is None:
+        method_match = None
+        parameters_match = None
+    else:
+        method_match = site_signature["method"] == product_signature["method"]
+        site_parameters = site_signature["parameters"]
+        product_parameters = product_signature["parameters"]
+        parameters_match = site_parameters.keys() == product_parameters.keys()
+        if parameters_match:
+            for name, left in site_parameters.items():
+                right = product_parameters[name]
+                if left["unit"] != right["unit"] or not math.isclose(
+                    left["value"], right["value"], rel_tol=1e-12, abs_tol=1e-9
+                ):
+                    parameters_match = False
+                    break
+
+    site_ellipsoid = _ellipsoid_summary(site)
+    product_ellipsoid = _ellipsoid_summary(product)
+    if site_ellipsoid is None or product_ellipsoid is None:
+        axes_match = None
+    else:
+        axes_match = all(
+            math.isclose(
+                float(site_ellipsoid[key]),
+                float(product_ellipsoid[key]),
+                rel_tol=0.0,
+                abs_tol=1e-6,
+            )
+            for key in ("semi_major_m", "semi_minor_m")
+        )
+
+    components = (method_match, parameters_match, axes_match)
+    match = None if any(value is None for value in components) else all(components)
+    return {
+        "match": match,
+        "method_match": method_match,
+        "numeric_parameters_match": parameters_match,
+        "ellipsoid_axes_match": axes_match,
+        "site04_signature": site_signature,
+        "product90_signature": product_signature,
+        "tolerance": "1e-9 in normalized units for operation parameters; 1e-6 m for axes",
+    }
+
+
 def crs_site04_vs_product90_detail(site: CRS | None, product: CRS | None) -> dict[str, Any]:
-    """Strict vs axis-order-ignored equality and parameter summaries for JSON output."""
+    """Compare CRS metadata and projection math separately for the B5 audit."""
+    parameters_comparison = projection_parameters_comparison(site, product)
     if not site or not product:
         return {
             "strict_equal": False,
@@ -148,6 +237,8 @@ def crs_site04_vs_product90_detail(site: CRS | None, product: CRS | None) -> dic
             },
             "ellipsoids": {"site04": None, "product90": None},
             "coordinate_operation": {"site04": None, "product90": None},
+            "projection_parameters_match": parameters_comparison["match"],
+            "projection_parameters_comparison": parameters_comparison,
         }
     strict = bool(site.equals(product))
     equal_ignore: bool | None
@@ -171,6 +262,8 @@ def crs_site04_vs_product90_detail(site: CRS | None, product: CRS | None) -> dic
             "site04": _coordinate_operation_str(site),
             "product90": _coordinate_operation_str(product),
         },
+        "projection_parameters_match": parameters_comparison["match"],
+        "projection_parameters_comparison": parameters_comparison,
     }
 
 
@@ -386,6 +479,8 @@ def main() -> int:
             "CRS-equal=", result["crs_equals_site04"],
             "CRS-equal-ignore-axis=",
             crs_detail["equal_ignore_axis_order"],
+            "projection-parameters-match=",
+            crs_detail["projection_parameters_match"],
             "observer-valid=", result["observer_point_sample"].get("is_valid"),
             "shared-valid=", result["shared_area_valid_sample_count"], "/ 25",
             "meanings: diagnostic only; compatibility verdict remains blocked",
