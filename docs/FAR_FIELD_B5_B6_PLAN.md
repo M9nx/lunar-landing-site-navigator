@@ -1,8 +1,8 @@
 # Far-field B5 and B6 Data Plan
 
-**Status:** Product 90 sources identified; files not mounted or locally audited. B5 near-field is reported passed for Site04 S04-P02. Far-field B5, B6, and the science readiness gate remain open.
+**Status:** Product 90 80 m and 240 m COGs are mounted on the Hub host. A user-reported source preflight found the normalized projection method, numeric parameters, and ellipsoid axes match Site04, while full pyproj CRS equality remains false. Frame tie, elevation convention, 720-ray far-field coverage, and seams remain unverified. B5 near-field is reported passed; full B5, B6, B7, and the science readiness gate remain open.
 
-**Purpose:** Give the benchmark owner a repeatable sequence to mount Product 90, verify compatibility with the existing Site04 raster, extend the terrain horizon without filling data gaps with assumed clear sky, and prepare a definition-compatible B6 comparison.
+**Purpose:** Give the benchmark owner a repeatable sequence to finish verifying the mounted Product 90 rasters against Site04, extend the terrain horizon without filling data gaps with assumed clear sky, and prepare a definition-compatible B6 comparison.
 
 ## 1. Candidate terrain files
 
