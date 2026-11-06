@@ -11,90 +11,185 @@
   <link rel="stylesheet" href="../assets/css/site.css">
 </head>
 <body data-page="prototype" data-root="../">
+  <canvas id="starfield" class="starfield" aria-hidden="true"></canvas>
   <a class="skip-link" href="#main">Skip to main content</a>
   <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
   <header id="site-header" class="site-header"></header>
-  <main id="main" class="wrap">
-    <section class="page-hero">
-      <p class="kicker">Site comparison · Training-only synthetic demo</p>
-      <h1>Compare two synthetic sites at one UTC hour.</h1>
-      <p>Practice the <strong>centre-ray</strong> state contract (Clear / Blocked / Unknown) against a <strong>0° geometric horizon</strong> and a <strong>synthetic terrain horizon</strong>. No NASA ephemeris, no real DEM, and no API science results are shown here.</p>
-      <p class="page-hero-links">
-        <a class="text-link" href="../">← Mission overview</a>
-        <a class="text-link" href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">Demo design sketch</a>
-        <a class="text-link" href="#optional-api">Optional: API · Hub</a>
-      </p>
+  <main id="main" class="wrap engine-page">
+    <section class="engine-hero">
+      <div class="engine-hero-copy">
+        <p class="kicker"><iconify-icon icon="lucide:moon-star" aria-hidden="true"></iconify-icon> Surface sky · SYNTHETIC training console</p>
+        <h1>Watch Sun and Earth against the terrain skyline.</h1>
+        <p>Two sites, one UTC hour. Polar plots show azimuth (from north, clockwise) and elevation. Terrain fill is invented silhouette — <strong>not</strong> a real DEM. Status is always written as <strong>Clear</strong>, <strong>Blocked</strong>, or <strong>Unknown</strong>.</p>
+      </div>
+      <div class="engine-hero-meta">
+        <span class="demo-chip">SYNTHETIC</span>
+        <figure class="moon-globe-wrap">
+          <div id="moon-globe" aria-label="Illustrative south-polar Moon globe with two site pins. Drag to orbit."></div>
+          <figcaption id="globe-caption">South pole context · Three.js globe · not SPICE</figcaption>
+          <ul class="globe-legend" aria-label="Globe symbols">
+            <li><span class="globe-swatch swatch-a"></span> Site A pin</li>
+            <li><span class="globe-swatch swatch-b"></span> Site B pin</li>
+            <li><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Synthetic sun</li>
+            <li><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth marker</li>
+          </ul>
+        </figure>
+        <p class="page-hero-links">
+          <a class="text-link" href="../">← Overview</a>
+          <a class="text-link" href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">Design sketch</a>
+          <a class="text-link" href="#optional-api">API · Hub</a>
+        </p>
+      </div>
     </section>
+
     <div class="alert console-alert" role="status">
       <div>
-        <strong>SYNTHETIC · not validated challenge output</strong>
+        <strong>Not validated lunar geometry</strong>
         <p>
-          Values follow explicit rules in <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">ENGINE_CALCULATION_PIPELINE.md</a>
-          and <a href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">DEMO_DESIGN_SKETCH.md</a>.
-          Product 78/90/69 and research notebooks are <strong>practice only</strong> for Hub workflows — not ground truth here.
-          <strong>SCIENCE_CALCULATIONS_READY</strong> remains false; <code>POST /v1/compare</code> stays gated.
+          Invented local-plane angles. Rules in
+          <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">ENGINE_CALCULATION_PIPELINE.md</a>.
+          <strong>SCIENCE_CALCULATIONS_READY</strong> is false; <code>POST /v1/compare</code> stays gated.
         </p>
       </div>
     </div>
 
-    <section class="quick-start" aria-labelledby="quick-start-title">
-      <h2 id="quick-start-title" class="quick-start-heading">Start here (about 1 minute)</h2>
-      <ol class="quick-start-list">
-        <li>Choose <strong>Site A</strong> and <strong>Site B</strong> — defaults show one site with a synthetic terrain gap (Malapert).</li>
-        <li>Move the <strong>UTC hour</strong> slider; watch the cards, comparison strip, and chart cursor.</li>
-        <li>Read the <strong>word labels</strong> for Sun and Earth (Clear / Blocked / Unknown). Colors are secondary.</li>
+    <section class="engine-console" id="compare-demo" aria-label="Comparison console">
+      <div class="engine-controls" aria-label="Comparison inputs">
+        <label>Site A
+          <select id="site-a" aria-describedby="controls-help">
+            <option value="s04p02" selected>Site04 S04-P02</option>
+            <option value="shackleton">Shackleton rim</option>
+            <option value="malapert">Malapert (gap + ridge)</option>
+          </select>
+        </label>
+        <label>Site B
+          <select id="site-b" aria-describedby="controls-help">
+            <option value="malapert" selected>Malapert (gap + ridge)</option>
+            <option value="shackleton">Shackleton rim</option>
+            <option value="s04p02">Site04 S04-P02</option>
+          </select>
+        </label>
+        <label>Date (label)
+          <input id="date" type="date" value="2025-01-01" aria-describedby="controls-help">
+        </label>
+        <div class="engine-time">
+          <div class="engine-time-row">
+            <label class="time-control">Hour UTC <span id="time-label">12:00</span>
+              <input id="time" type="range" min="0" max="23" value="12" aria-valuemin="0" aria-valuemax="23" aria-valuenow="12" aria-label="Sample hour UTC">
+            </label>
+          </div>
+          <div class="engine-time-actions">
+            <button type="button" class="btn btn-ghost engine-play" id="play-hours" aria-pressed="false">Play 24 h</button>
+            <button type="button" class="btn btn-ghost" id="cue-unknown" data-hour="2">Cue 02:00 gap</button>
+            <button type="button" class="btn btn-ghost" id="cue-ridge" data-hour="6">Cue 06:00 ridge</button>
+          </div>
+        </div>
+        <p id="controls-help" class="controls-help">Keyboard: Tab into controls, arrows on the slider, Space on Play. Malapert 02:00 = Unknown sector; 06:00 = ridge block. Values stay SYNTHETIC.</p>
+      </div>
+
+      <ol class="pipe" id="pipe" aria-label="Calculation stages">
+        <li data-stage="terrain"><iconify-icon icon="lucide:mountain" aria-hidden="true"></iconify-icon> 1 Terrain</li>
+        <li data-stage="coverage"><iconify-icon icon="lucide:scan" aria-hidden="true"></iconify-icon> 2 Coverage</li>
+        <li data-stage="horizon"><iconify-icon icon="lucide:circle-dashed" aria-hidden="true"></iconify-icon> 3 Horizon</li>
+        <li data-stage="ephemeris"><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> 4 Sun/Earth</li>
+        <li data-stage="classify"><iconify-icon icon="lucide:check" aria-hidden="true"></iconify-icon> 5 Classify</li>
       </ol>
-      <p class="quick-start-hint">Tip: Malapert at <strong>02:00 UTC</strong> → Unknown terrain gap; <strong>06:00–07:00 UTC</strong> → synthetic ridge block.</p>
+
+      <aside class="lesson-board" id="lesson-board" aria-live="polite">
+        <p class="lesson-kicker">What just happened · SYNTHETIC</p>
+        <p id="lesson-headline" class="lesson-headline">Scrub the hour to see the sky move.</p>
+        <p id="lesson-body" class="lesson-body"></p>
+        <ul class="glossary" id="glossary">
+          <li><button type="button" class="gloss-term" data-term="geometric"><iconify-icon icon="lucide:circle-dashed" aria-hidden="true"></iconify-icon> Geometric 0°</button> smooth sphere, no craters</li>
+          <li><button type="button" class="gloss-term" data-term="terrain"><iconify-icon icon="lucide:mountain" aria-hidden="true"></iconify-icon> Terrain horizon</button> brown silhouette on the polar plot</li>
+          <li><button type="button" class="gloss-term" data-term="centre"><iconify-icon icon="lucide:satellite" aria-hidden="true"></iconify-icon> Centre-ray</button> one line of sight, not the full disc</li>
+          <li><button type="button" class="gloss-term" data-term="unknown"><iconify-icon icon="lucide:scan" aria-hidden="true"></iconify-icon> Unknown</button> missing terrain; never counted as clear</li>
+        </ul>
+        <p class="gloss-def" id="gloss-def">Tap a term to highlight it on the plots.</p>
+      </aside>
+
+      <div class="sky-stage" aria-live="polite">
+        <article class="sky-panel" data-slot="A">
+          <header class="sky-panel-head">
+            <div>
+              <p class="sky-slot">Site A</p>
+              <h2 id="name-a">Site A</h2>
+            </div>
+            <div class="sky-pills" id="pills-a"></div>
+          </header>
+          <div class="sky-plot" id="plot-a"></div>
+          <div class="edu-meters" id="meters-a"></div>
+          <p class="sky-why" id="why-a"></p>
+          <p class="sky-readout" id="readout-a"></p>
+        </article>
+        <article class="sky-panel" data-slot="B">
+          <header class="sky-panel-head">
+            <div>
+              <p class="sky-slot">Site B</p>
+              <h2 id="name-b">Site B</h2>
+            </div>
+            <div class="sky-pills" id="pills-b"></div>
+          </header>
+          <div class="sky-plot" id="plot-b"></div>
+          <div class="edu-meters" id="meters-b"></div>
+          <p class="sky-why" id="why-b"></p>
+          <p class="sky-readout" id="readout-b"></p>
+        </article>
+      </div>
+
+      <ul class="shape-key" aria-label="Polar plot symbols">
+        <li><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Sun = centre-ray, not the disc</li>
+        <li><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth = same contract, other azimuth</li>
+        <li><iconify-icon icon="lucide:rocket" aria-hidden="true"></iconify-icon> Lander = observer at zenith</li>
+        <li><iconify-icon icon="lucide:compass" aria-hidden="true"></iconify-icon> N/E/S/W = azimuth from north</li>
+      </ul>
+
+      <section class="compare-hud" id="compare-strip" aria-label="Same time comparison of two sites"></section>
     </section>
 
-    <section class="controls" id="compare-demo" aria-label="Comparison inputs">
-      <label>Site A
-        <select id="site-a" aria-describedby="controls-help"><option value="s04p02" selected>Site04 S04-P02 (anchor)</option><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif (synthetic gap)</option></select>
-      </label>
-      <label>Site B
-        <select id="site-b" aria-describedby="controls-help"><option value="malapert" selected>Malapert Massif (synthetic gap)</option><option value="shackleton">Shackleton rim</option><option value="s04p02">Site04 S04-P02 (anchor)</option></select>
-      </label>
-      <label>Date (label only)<input id="date" type="date" value="2025-01-01" aria-describedby="controls-help"></label>
-      <label class="time-control">Sample time UTC <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12" aria-valuemin="0" aria-valuemax="23" aria-valuenow="12" aria-label="Sample hour UTC"></label>
-      <p id="controls-help" class="controls-help">Use keyboard: Tab to fields, arrow keys in selects and the hour slider. Try Malapert near hour <strong>02:00 UTC</strong> for a synthetic terrain <strong>Unknown</strong> sector (azimuth 30°).</p>
-    </section>
-    <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample · SYNTHETIC</span><span>23:00</span></div>
-    <section class="cards" id="results" aria-live="polite"></section>
-    <section class="compare-strip-wrap" id="compare-strip" aria-label="Same time comparison of two sites"></section>
-    <section class="chart-card">
+    <section class="chart-card engine-series">
       <div class="chart-heading">
         <div>
-          <div class="kicker">Synthetic curves and horizons</div>
-          <h2>Elevation vs geometric (0°) and synthetic terrain horizon</h2>
+          <div class="kicker">24-hour elevation · Site A (synthetic)</div>
+          <h2>Sun and Earth vs geometric 0° and Site A terrain</h2>
         </div>
         <div class="legend" aria-label="Chart legend">
-          <span><i class="sun"></i>Sun elev.</span>
-          <span><i class="earth"></i>Earth elev.</span>
-          <span><i class="h-geo"></i>Geometric horizon (0°)</span>
-          <span><i class="h-terrain-a"></i>Terrain Site A</span>
-          <span><i class="h-terrain-b"></i>Terrain Site B</span>
+          <span><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Sun</span>
+          <span><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth</span>
+          <span><i class="h-geo"></i>Geometric 0°</span>
+          <span><i class="h-terrain-a"></i>Terrain A</span>
         </div>
       </div>
       <svg id="chart" viewBox="0 0 800 250" role="img" aria-labelledby="chart-title chart-desc">
         <title id="chart-title">Synthetic Sun, Earth, and horizon lines</title>
-        <desc id="chart-desc">Training chart: two body elevation curves, a 0 degree horizontal horizon, and two stepped synthetic terrain horizons. Not real lunar geometry.</desc>
+        <desc id="chart-desc">Training chart of elevation over 24 hours. Not real lunar geometry.</desc>
+        <defs>
+          <linearGradient id="sun-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#e3b34a" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#e3b34a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
         <g class="gridlines"><path d="M55 30H780 M55 82H780 M55 134H780 M55 186H780 M55 220H780"/></g>
         <g class="axis-labels"><text x="12" y="34">+15°</text><text x="25" y="86">+7.5°</text><text x="38" y="138">0°</text><text x="20" y="190">−7.5°</text><text x="31" y="224">−12°</text><text x="55" y="244">00</text><text x="410" y="244">12</text><text x="760" y="244">23</text></g>
+        <path id="sun-area" class="sun-area"></path>
         <path id="geo-horizon-line" class="line horizon-geo-line" d="M55 134 H780"></path>
         <path id="terrain-horizon-line-a" class="line horizon-terrain-a"></path>
-        <path id="terrain-horizon-line-b" class="line horizon-terrain-b"></path>
+        <path id="terrain-horizon-line-b" class="line horizon-terrain-b" hidden></path>
         <path id="sun-line" class="line sun-line"></path>
         <path id="earth-line" class="line earth-line"></path>
+        <circle id="sun-now" class="series-dot sun-dot" r="6"></circle>
+        <circle id="earth-now" class="series-dot earth-dot" r="6"></circle>
         <path id="cursor-line" class="cursor-line" d="M 438 25 V 220"></path>
       </svg>
-      <p class="chart-note">Curves and terrain silhouettes are invented for UI practice. Try hour 6 or 7 on Malapert for a synthetic <strong>ridge</strong> block; hour 2 for <strong>unknown</strong> gap.</p>
+      <p class="chart-note">Time-series is Site A only so the polar pair stays the comparison. Terrain B is on the right sky plot.</p>
     </section>
+
     <section class="explain">
-      <h2>What this prototype demonstrates</h2>
-      <p>It rehearses <strong>two-site / one-time</strong> comparison and explicit <strong>Clear / Blocked / Unknown</strong> text (centre-ray vs terrain, not finite disc or power). Jupyter and real rasters stay in the Hub; see <a href="../documents.html?doc=JUPYTER_PRACTICE_PASS.md">JUPYTER_PRACTICE_PASS.md</a>.</p>
+      <h2>What you are looking at</h2>
+      <p>Each polar plot is a synthetic local sky: outer dark ring is below the geometric horizon, the dashed circle is 0°, the filled shape is terrain. Sun and Earth are centre-ray markers — not disc fractions, power, or radio. Jupyter and rasters stay in the Hub; see <a href="../documents.html?doc=JUPYTER_PRACTICE_PASS.md">JUPYTER_PRACTICE_PASS.md</a>.</p>
       <p>
-        <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Engine pipeline (concept) →</a>
-        · <a href="../documents.html?doc=DATASET_INTAKE_CHECKLIST.md">Dataset intake checklist →</a>
+        <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Engine pipeline →</a>
+        · <a href="../documents.html?doc=DATASET_INTAKE_CHECKLIST.md">Dataset intake →</a>
         · <a href="../documents.html?doc=METHOD_DECISION.md">Method decision →</a>
       </p>
     </section>
@@ -137,6 +232,9 @@
     </details>
   </main>
   <footer id="site-footer" class="site-footer"></footer>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
   <script src="../assets/js/navigator-config.js"></script>
   <script src="../assets/js/site.js"></script>
   <script src="config.js"></script>
