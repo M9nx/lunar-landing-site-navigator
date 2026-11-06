@@ -23,8 +23,10 @@
           <p class="lead">A team research hub and early interface for comparing candidate landing sites and dates through local Sun and Earth geometry, illumination, and direct-to-Earth visibility.</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="prototype/">Open the prototype <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" id="hub-entry-link" href="#" rel="noopener">Research workspace (GitHub)</a>
             <a class="btn btn-ghost" href="documents.html?doc=RESEARCH_DRAFT.md">Read the research</a>
           </div>
+          <p class="hero-note" id="team-auth-note">JupyterHub and the API use separate GitHub sign-ins—not single sign-on.</p>
         </div>
         <aside class="polar-panel" aria-label="Illustrative south-polar site map">
           <div class="polar-meta"><span>South polar schematic</span><span>Not to scale</span></div>
@@ -177,8 +179,16 @@
     </section>
   </main>
   <footer id="site-footer" class="site-footer"></footer>
+  <script src="assets/js/navigator-config.js"></script>
   <script src="prototype/config.js"></script>
   <script src="assets/js/site.js"></script>
+  <script>
+    (function () {
+      const hub = window.NAVIGATOR_CONFIG?.hubBaseUrl?.replace(/\/$/, "");
+      const link = document.getElementById("hub-entry-link");
+      if (link && hub) link.href = hub + "/";
+    })();
+  </script>
   <script>
     (async function () {
       const value = document.getElementById("api-stat-value");

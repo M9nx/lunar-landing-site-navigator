@@ -1,15 +1,28 @@
-# Local data-science workspace
+# Team research workspace
 
-The optional JupyterLab container is intended for private analysis of mission files and reproducible experiments. The research image includes Python, NumPy, pandas, Matplotlib, SpiceyPy, rasterio, Fiona, Shapely, and pyproj.
+## JupyterHub (recommended)
 
-Start it only on your own machine:
+Multi-user JupyterLab runs under the **`hub` Compose profile** with GitHub OAuth (separate from API login—not SSO).
 
-1. Copy `.env.example` to `.env`.
-2. Replace `JUPYTER_TOKEN` with a long random value.
-3. Run `docker compose --profile research up --build`.
-4. Open `http://127.0.0.1:8888` and enter the token.
-5. Keep notebooks in `research/notebooks/`; source mission data from the documented provider and store it under `data/`. Downloaded products are gitignored.
+1. Configure `.env` (Hub OAuth app, allowlists, absolute `HOST_SHARED_NOTEBOOKS` / `HOST_DATA_PATH`).
+2. Build and start: `docker compose --profile hub up --build -d`
+3. Access via **`https://hub.m9nx.me`** (or your `HUB_PUBLIC_URL`) through HTTPS reverse proxy—not by publishing notebook ports.
 
-`research/notebooks/01_site04_data_audit.ipynb` inspects the NASA PGDA Site04 (Shackleton) LOLA 5 m/pix GeoTIFFs and ROI shapefile. It records native projected coordinates and sampled raster values only. It does not calculate Sun or Earth geometry and does not recommend a landing site.
+Team template notebooks from git are mounted read-only at `~/shared-readonly/` inside each user server. User work persists in Docker volume `jupyterhub-user-{username}`.
 
-The notebook port is bound to loopback and is not routed through the public API tunnel. Do not expose JupyterLab to the public internet.
+See [OPERATIONS.md](../docs/OPERATIONS.md) and [DEPLOYMENT.md](../docs/DEPLOYMENT.md).
+
+## Legacy single-user profile (dev fallback)
+
+```sh
+docker compose --profile research up --build
+```
+
+Open `http://127.0.0.1:8888` with token from `.env`. Do not expose this port publicly.
+
+## Site04 audit notebooks (repo templates)
+
+- `research/notebooks/01_site04_data_audit.ipynb`
+- `research/notebooks/02_site04_registration_and_point_selection.ipynb`
+
+These record native projected coordinates only; they do not calculate Sun/Earth geometry or recommend landing sites.
