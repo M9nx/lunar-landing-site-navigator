@@ -17,6 +17,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import platform
 import sys
@@ -41,6 +42,12 @@ POINT_ID = "S04-P02"
 POINT_X_M, POINT_Y_M = -2652.5, -6082.5
 REFERENCE_RADIUS_M = 1_737_400.0
 SITE04_GLOB = "Site04_final_adj_5mpp_surf.tif"
+
+# Diagnostic comparison only: ignores CRS names/authority IDs; does not clear compatibility.
+ELLIPSOID_AXIS_ATOL_M = 1e-3
+PROJECTION_PARAM_RTOL = 1e-9
+PROJECTION_PARAM_ATOL_DEG = 1e-12
+PROJECTION_PARAM_ATOL_M = 1e-6
 
 
 def sha256_file(path: Path) -> str:
@@ -174,6 +181,178 @@ def crs_site04_vs_product90_detail(site: CRS | None, product: CRS | None) -> dic
     }
 
 
+def _ellipsoid_axes_from_crs(crs: CRS | None) -> dict[str, float] | None:
+    if crs is None:
+        return None
+    g = crs.geodetic_crs
+    if g is None or g.ellipsoid is None:
+        return None
+    e = g.ellipsoid
+    return {
+        "semi_major_m": float(e.semi_major_metre),
+        "semi_minor_m": float(e.semi_minor_metre),
+    }
+
+
+def _conversion_from_projjson(projjson: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not projjson or projjson.get("type") != "ProjectedCRS":
+        return None
+    conv = projjson.get("conversion")
+    return conv if isinstance(conv, dict) else None
+
+
+def _conversion_method_name(conv: dict[str, Any] | None) -> str | None:
+    if not conv:
+        return None
+    method = conv.get("method")
+    if not isinstance(method, dict):
+        return None
+    name = method.get("name")
+    return str(name) if name is not None else None
+
+
+def _normalized_conversion_parameters(
+    conv: dict[str, Any] | None,
+) -> list[tuple[str, float, str]]:
+    """Stable-ordered (param name, value, unit string) tuples."""
+    if not conv:
+        return []
+    params = conv.get("parameters")
+    if not isinstance(params, list):
+        return []
+    out: list[tuple[str, float, str]] = []
+    for p in params:
+        if not isinstance(p, dict):
+            continue
+        name = p.get("name")
+        if name is None:
+            continue
+        val = p.get("value")
+        if val is None:
+            continue
+        try:
+            fv = float(val)
+        except (TypeError, ValueError):
+            continue
+        unit = p.get("unit")
+        out.append((str(name), fv, str(unit) if unit is not None else ""))
+    return sorted(out, key=lambda x: (x[0], x[2]))
+
+
+def _param_abs_tol(unit_str: str) -> float:
+    u = unit_str.lower()
+    if "degree" in u or u in {"°", "deg"}:
+        return PROJECTION_PARAM_ATOL_DEG
+    if "metre" in u or u == "m":
+        return PROJECTION_PARAM_ATOL_M
+    return PROJECTION_PARAM_ATOL_M
+
+
+def projection_parameters_match_detail(
+    site04_meta: dict[str, Any],
+    product_meta: dict[str, Any],
+    site04_crs: CRS | None,
+    product_crs: CRS | None,
+) -> dict[str, Any]:
+    """Compare ellipsoid axes + PROJJSON conversion method/parameters (names/IDs ignored elsewhere)."""
+    tolerances = {
+        "ellipsoid_semi_axis_m": ELLIPSOID_AXIS_ATOL_M,
+        "projection_numeric_relative": PROJECTION_PARAM_RTOL,
+        "projection_angle_absolute_deg": PROJECTION_PARAM_ATOL_DEG,
+        "projection_linear_absolute_m": PROJECTION_PARAM_ATOL_M,
+    }
+    site_axes = _ellipsoid_axes_from_crs(site04_crs)
+    prod_axes = _ellipsoid_axes_from_crs(product_crs)
+    ellipsoid_axes_match: bool | None
+    if site_axes is None or prod_axes is None:
+        ellipsoid_axes_match = None
+    else:
+        ellipsoid_axes_match = (
+            math.isclose(
+                site_axes["semi_major_m"],
+                prod_axes["semi_major_m"],
+                rel_tol=0.0,
+                abs_tol=ELLIPSOID_AXIS_ATOL_M,
+            )
+            and math.isclose(
+                site_axes["semi_minor_m"],
+                prod_axes["semi_minor_m"],
+                rel_tol=0.0,
+                abs_tol=ELLIPSOID_AXIS_ATOL_M,
+            )
+        )
+
+    site_pj = site04_meta.get("crs_projjson")
+    prod_pj = product_meta.get("crs_projjson")
+    site_conv = _conversion_from_projjson(site_pj) if isinstance(site_pj, dict) else None
+    prod_conv = _conversion_from_projjson(prod_pj) if isinstance(prod_pj, dict) else None
+
+    site_method = _conversion_method_name(site_conv)
+    prod_method = _conversion_method_name(prod_conv)
+    if site_method is None and prod_method is None and site_conv is None and prod_conv is None:
+        conversion_method_match: bool | None = None
+    elif site_method is None or prod_method is None:
+        conversion_method_match = False
+    else:
+        conversion_method_match = site_method == prod_method
+
+    site_norm = _normalized_conversion_parameters(site_conv)
+    prod_norm = _normalized_conversion_parameters(prod_conv)
+    conversion_parameters_match: bool | None
+    param_mismatch_reason: str | None = None
+    if site_conv is None or prod_conv is None:
+        conversion_parameters_match = None
+    elif len(site_norm) != len(prod_norm):
+        conversion_parameters_match = False
+        param_mismatch_reason = "parameter_count_mismatch"
+    else:
+        conversion_parameters_match = True
+        for (na, va, ua), (nb, vb, ub) in zip(site_norm, prod_norm):
+            if na != nb:
+                conversion_parameters_match = False
+                param_mismatch_reason = f"parameter_name_mismatch:{na}!={nb}"
+                break
+            atol = max(_param_abs_tol(ua), _param_abs_tol(ub))
+            if not math.isclose(va, vb, rel_tol=PROJECTION_PARAM_RTOL, abs_tol=atol):
+                conversion_parameters_match = False
+                param_mismatch_reason = f"value_mismatch:{na}"
+                break
+
+    match_components = [
+        ellipsoid_axes_match,
+        conversion_method_match,
+        conversion_parameters_match,
+    ]
+    if any(m is False for m in match_components):
+        overall_match = False
+    elif any(m is None for m in match_components):
+        overall_match = None
+    else:
+        overall_match = True
+
+    return {
+        "match": overall_match,
+        "tolerances": tolerances,
+        "notes": (
+            "Compares geodetic ellipsoid semi-axes from pyproj and ProjectedCRS conversion "
+            "method/parameters from crs_projjson. CRS names, datum IDs, and WKT wording are ignored. "
+            "Diagnostic only; does not clear compatibility_verdict or science_calculations_ready."
+        ),
+        "components": {
+            "ellipsoid_axes_match": ellipsoid_axes_match,
+            "ellipsoid_axes_m": {"site04": site_axes, "product90": prod_axes},
+            "conversion_method_match": conversion_method_match,
+            "conversion_methods": {"site04": site_method, "product90": prod_method},
+            "conversion_parameters_match": conversion_parameters_match,
+            "conversion_parameters_normalized": {
+                "site04": [{"name": n, "value": v, "unit": u} for n, v, u in site_norm],
+                "product90": [{"name": n, "value": v, "unit": u} for n, v, u in prod_norm],
+            },
+            "conversion_parameters_mismatch_reason": param_mismatch_reason,
+        },
+    }
+
+
 def sample_value(path: Path, x: float, y: float) -> dict[str, Any]:
     with rasterio.open(path) as ds:
         inside = ds.bounds.left <= x <= ds.bounds.right and ds.bounds.bottom <= y <= ds.bounds.top
@@ -264,6 +443,9 @@ def main() -> int:
             "product90": [a.direction for a in product_crs.axis_info] if product_crs else None,
         }
         crs_site04_vs_product90 = crs_site04_vs_product90_detail(site04_crs, product_crs)
+        projection_parameters_match = projection_parameters_match_detail(
+            site04, product, site04_crs, product_crs,
+        )
         shared_samples: list[dict[str, Any]] = []
         if not site04_crs or not product_crs:
             point = {"error": "CRS missing; cannot transform fixed point."}
@@ -325,6 +507,7 @@ def main() -> int:
         candidate_results[filename] = {
             "crs_equals_site04": crs_equal,
             "crs_site04_vs_product90": crs_site04_vs_product90,
+            "projection_parameters_match": projection_parameters_match,
             "axis_directions": crs_axis_info,
             "observer_point_sample": point,
             "observer_point_roundtrip": roundtrip,
@@ -381,11 +564,13 @@ def main() -> int:
     print("Wrote:", output_path)
     for filename, result in candidate_results.items():
         crs_detail = result["crs_site04_vs_product90"]
+        proj_match = result["projection_parameters_match"]
         print(
             filename,
             "CRS-equal=", result["crs_equals_site04"],
             "CRS-equal-ignore-axis=",
             crs_detail["equal_ignore_axis_order"],
+            "proj-params-match=", proj_match["match"],
             "observer-valid=", result["observer_point_sample"].get("is_valid"),
             "shared-valid=", result["shared_area_valid_sample_count"], "/ 25",
             "meanings: diagnostic only; compatibility verdict remains blocked",
