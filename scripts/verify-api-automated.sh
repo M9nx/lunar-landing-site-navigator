@@ -13,6 +13,11 @@ health="$(curl -sS "$API_BASE/health")"
 echo "$health" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('science_calculations_ready') is False, d; print('science_calculations_ready=false')"
 ok "health"
 
+echo "=== GET /v1/benchmark/status (no science payload) ==="
+bench="$(curl -sS "$API_BASE/v1/benchmark/status")"
+echo "$bench" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('benchmark_kind')=='api_infrastructure_probe', d; assert d.get('science_calculations_ready') is False; assert 'sqlite_ping_ms' in d; print('benchmark/status ok')"
+ok "/v1/benchmark/status"
+
 echo "=== Unauthenticated /auth/me ==="
 code="$(curl -sS -o /dev/null -w '%{http_code}' "$API_BASE/auth/me")"
 [[ "$code" == "401" ]] || fail "/auth/me expected 401 got $code"
