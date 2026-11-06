@@ -1,6 +1,6 @@
-# Benchmark Plan — Proposed, Not Yet Measured
+# Benchmark Plan and Partial Results
 
-This document defines how the prototype could be evaluated. It contains no benchmark results yet.
+This document defines evaluation methods and records the first Site04 run. Only B1–B4 have partial or reported results; B5–B7 remain open. The B4 entry below is a Hub-run result reported by the project owner; raw run files remain in the owner's persistent Jupyter home and are not committed here.
 
 ## Evaluation principles
 
@@ -34,10 +34,35 @@ This document defines how the prototype could be evaluated. It contains no bench
 
 | Case ID | Site / coordinates | UTC input time(s) | Reference product/tool | Terrain model | Expected output | Status |
 |---|---|---|---|---|---|---|
-| S04-01 | Shackleton rim; exact point pending ROI review | Pending | Pending | Pending | Sun/Earth azimuth and elevation | Not run |
+| S04-01 | Site04 S04-P02, X=−2652.5 m, Y=−6082.5 m; row/col 1416/1269 | 2025-01-01T00:00Z through 23:00Z, hourly | DE421 SPICE geometric baseline; B4 cross-check via NAIF `azlcpo` | Reference sphere for notebook 03; PCK ellipsoid for B4 | Sun/Earth centre azimuth/elevation; no terrain clearance | B1–B3 execution reported; B4 pass reported; review pending |
 | S23-01 | Malapert Massif; exact point pending ROI review | Pending | Pending | Pending | Sun/Earth azimuth and elevation | Not run |
 | S04-AVG | Shackleton rim | Aggregate period compatible with reference | LOLA GDRVIS, if grid coverage and assumptions match | Product-defined | Average illumination/Earth visibility comparison | Not run |
 | S23-AVG | Malapert Massif | Aggregate period compatible with reference | LOLA GDRVIS, if grid coverage and assumptions match | Product-defined | Average illumination/Earth visibility comparison | Not run |
+
+## First recorded run: Site04 S04-P02
+
+**Provenance:** Results below were reported from a JupyterHub run on 2026-11-06. The notebook CSV and JSON manifests remain in the owner's persistent Hub home; they were not attached to this repository update. Values marked approximate should be replaced with exact manifest values if the artifacts are later archived.
+
+| Gate | Reported result | Status / interpretation |
+|---|---|---|
+| B1: Raster registration | S04-P02 sampled at row 1416, column 1269; projected coordinate matches the audited pixel centre (X=−2652.5 m, Y=−6082.5 m); Z=1736.902 m, LDEC=2 | Executed; benchmark owner sign-off pending |
+| B2: Projection | Inverse/forward projection round-trip residual approximately 7.5×10⁻⁹ m | Within proposed 1×10⁻³ m criterion for this point; extent-wide cases still pending |
+| B3: Frame and kernels | Five kernels loaded; `MOON_ME` resolved as frame ID 31001; cached kernel SHA-256 values matched notebook 03 manifest | Executed; manifest review pending |
+| B4: Local angle conversion | Hand-built ellipsoid-normal basis vs NAIF `azlcpo` for Sun/Earth at 00:00, 12:00, 23:00 UTC (six comparisons); maximum absolute azimuth and elevation errors each approximately 1×10⁻¹⁴°; manifest reports `B4_pass: true` | Pass against proposed 1×10⁻⁶° criterion for this point, these epochs, and these kernel inputs |
+| B5: Terrain horizon | No result yet | Open |
+| B6: Published illumination context | No result yet | Open |
+| B7: Runtime/API | No result yet | Open |
+
+Notebook 03 reports geometric centre angles at 2025-01-01T00:00Z of approximately Sun azimuth 318.6° / elevation +1.68° and Earth azimuth 152° / elevation −6.5°. They are not terrain-cleared. The B4 run reports the Site04 PCK ellipsoid radii [1737.4, 1737.4, 1737.4] km and approximately 0° between radial-sphere up and ellipsoid up at S04-P02.
+
+Artifacts in the owner's persistent Hub home:
+
+- `~/research-results/site04-spice-baseline/S04-P02_2025-01-01_hourly_geometric_angles.csv`
+- `~/research-results/site04-spice-baseline/kernel_and_run_manifest.json`
+- `~/research-results/site04-spice-baseline/S04-P02_azlcpo_crosscheck.csv`
+- `~/research-results/site04-spice-baseline/B4_validation_manifest.json`
+
+B4 validates the local angle conversion against NAIF's routine using the same DE421 ephemeris and kernels. It is not an independent ephemeris validation and does not establish terrain visibility. Keep `SCIENCE_CALCULATIONS_READY=false` while B5–B7 and review remain open.
 
 ## Reporting template
 
