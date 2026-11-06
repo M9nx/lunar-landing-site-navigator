@@ -539,7 +539,7 @@ def main() -> int:
                 "first-assigned gap as an assignment/posting diagnostic, not a confirmed masked "
                 "wedge. Cross-check product90_ray_coverage_diagnostic.py and "
                 "product90_ray_corridor_diagnostic.py; owner review of coverage criteria remains required."
-            ),,
+            ),
             "bins_all_three_bands_sampled": int(np.sum(all_bands_sampled)),
             "bins_nanmax_finite": int(np.sum(np.isfinite(composite_nanmax))),
             "bins_fail_closed_finite": int(np.sum(np.isfinite(composite_fail_closed))),
