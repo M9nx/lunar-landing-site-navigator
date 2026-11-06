@@ -73,7 +73,26 @@ docker compose --profile research up --build
 Until `https://api.m9nx.me/health` returns JSON from your server, GitHub Pages will show **Backend unavailable** and API sign-in cannot be tested. On the team host:
 
 1. Start `docker compose up -d api` (and `--profile hub` when testing Hub).
-2. Terminate TLS on **`api.m9nx.me`** → `127.0.0.1:8000` and **`hub.m9nx.me`** → `127.0.0.1:8001` (Caddy, nginx, or Cloudflare **named** tunnel). Examples: [`docs/examples/staging-caddy.Caddyfile`](examples/staging-caddy.Caddyfile), [`docs/examples/cloudflare-tunnel.example.yml`](examples/cloudflare-tunnel.example.yml). Do **not** publish `:8888` or per-user notebook ports.
+2. Terminate TLS on **`api.m9nx.me`** → `127.0.0.1:8000` and **`hub.m9nx.me`** → `127.0.0.1:8001`. Do **not** publish `:8888` or per-user notebook ports.
+
+   **Option A — Cloudflare locally managed tunnel** (domain on Cloudflare; `cloudflared` on the host):
+
+   ```sh
+   cloudflared tunnel login
+   cloudflared tunnel create lunar-navigator
+   cloudflared tunnel route dns lunar-navigator api.m9nx.me
+   cloudflared tunnel route dns lunar-navigator hub.m9nx.me
+   ```
+
+   Copy [`docs/examples/cloudflare-tunnel.example.yml`](examples/cloudflare-tunnel.example.yml) to a **private** path (e.g. `~/.config/lunar-navigator/cloudflare-tunnel.yml`), set `tunnel` to the UUID and `credentials-file` to `~/.cloudflared/<UUID>.json`, then:
+
+   ```sh
+   cloudflared tunnel --config ~/.config/lunar-navigator/cloudflare-tunnel.yml run <TUNNEL_UUID>
+   ```
+
+   Verify: `curl -fsS https://api.m9nx.me/health` and `curl -sSI https://hub.m9nx.me/hub/login`.
+
+   **Option B — Caddy on the host:** [`docs/examples/staging-caddy.Caddyfile`](examples/staging-caddy.Caddyfile) (DNS must point at the server; not required if using Option A).
 3. Set `API_PUBLIC_URL=https://api.m9nx.me` and API OAuth callback `https://api.m9nx.me/auth/github/callback` on the **API** GitHub OAuth app.
 4. Run `./scripts/verify-api-automated.sh` on the host, then complete [GO_LIVE_VERIFICATION.md](GO_LIVE_VERIFICATION.md) over HTTPS.
 

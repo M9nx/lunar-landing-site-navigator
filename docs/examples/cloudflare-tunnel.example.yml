@@ -1,13 +1,21 @@
-# Cloudflare named tunnel (stable hostnames) — template only.
-# Create tunnel in Zero Trust dashboard, then:
+# Locally managed Cloudflare Tunnel — template only (do not commit credentials).
+# Domain must be on Cloudflare. Run on the Docker host:
+#
+#   cloudflared tunnel login
 #   cloudflared tunnel create lunar-navigator
 #   cloudflared tunnel route dns lunar-navigator api.m9nx.me
 #   cloudflared tunnel route dns lunar-navigator hub.m9nx.me
-# Copy credentials JSON path below and run:
-#   cloudflared tunnel --config cloudflare-tunnel.yml run
+#
+# `tunnel create` prints a tunnel UUID and writes:
+#   ~/.cloudflared/<TUNNEL_UUID>.json
+#
+# Copy this file to a private path (e.g. ~/.config/lunar-navigator/cloudflare-tunnel.yml),
+# replace placeholders, then run:
+#
+#   cloudflared tunnel --config /path/to/cloudflare-tunnel.yml run <TUNNEL_UUID>
 
-tunnel: lunar-navigator
-credentials-file: /path/to/lunar-navigator.json
+tunnel: <TUNNEL_UUID>
+credentials-file: /home/<user>/.cloudflared/<TUNNEL_UUID>.json
 
 ingress:
   - hostname: api.m9nx.me
