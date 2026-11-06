@@ -1,4 +1,7 @@
+import base64
 import hashlib
+import hmac
+import json
 import secrets
 from typing import Annotated
 
@@ -16,17 +19,47 @@ def new_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def parse_oauth_state(state: str) -> tuple[str, str]:
-    """Return (nonce, redirect_url)."""
-    if ":" not in state:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
-    nonce, redirect = state.split(":", 1)
-    return nonce, redirect
+def _oauth_state_signature(payload_b64: str) -> str:
+    digest = hmac.new(
+        settings["session_secret"].encode(),
+        payload_b64.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    return digest[:24]
 
 
 def build_oauth_state(redirect_url: str) -> str:
     nonce = secrets.token_urlsafe(16)
-    return f"{nonce}:{redirect_url}"
+    payload = json.dumps({"n": nonce, "r": redirect_url}, separators=(",", ":"))
+    payload_b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+    return f"{payload_b64}.{_oauth_state_signature(payload_b64)}"
+
+
+def parse_oauth_state(state: str) -> tuple[str, str]:
+    """Return (nonce, redirect_url). Verifies HMAC (cookie not required)."""
+    if "." not in state:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    payload_b64, sig = state.rsplit(".", 1)
+    expected = _oauth_state_signature(payload_b64)
+    if not secrets.compare_digest(sig, expected):
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    pad = "=" * (-len(payload_b64) % 4)
+    try:
+        data = json.loads(base64.urlsafe_b64decode(payload_b64 + pad))
+        return str(data["n"]), str(data["r"])
+    except (KeyError, json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state") from exc
+
+
+def oauth_state_valid(state: str, cookie_state: str | None) -> bool:
+    """True if signed state verifies, or legacy cookie matches."""
+    if cookie_state and secrets.compare_digest(state, cookie_state):
+        return True
+    try:
+        parse_oauth_state(state)
+        return True
+    except HTTPException:
+        return False
 
 
 def get_session_by_id(db: Session, session_id: str | None) -> ApiSession | None:

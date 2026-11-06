@@ -9,6 +9,9 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://m9nx.me,https://m9nx.github.io,http://localhost:8765,http://127.0.0.1:8765,http://localhost:8000,http://127.0.0.1:8000}
       DATABASE_URL: sqlite:////data/navigator.db
       API_PUBLIC_URL: ${API_PUBLIC_URL:-http://127.0.0.1:8000}
+      API_GITHUB_CLIENT_ID: ${API_GITHUB_CLIENT_ID}
+      API_GITHUB_CLIENT_SECRET: ${API_GITHUB_CLIENT_SECRET}
+      APPROVED_GITHUB_USERS: ${APPROVED_GITHUB_USERS}
       SCIENCE_CALCULATIONS_READY: ${SCIENCE_CALCULATIONS_READY:-false}
     ports:
       - "127.0.0.1:8000:8000"
@@ -36,6 +39,9 @@ services:
     env_file:
       - .env
     environment:
+      HUB_GITHUB_CLIENT_ID: ${HUB_GITHUB_CLIENT_ID}
+      HUB_GITHUB_CLIENT_SECRET: ${HUB_GITHUB_CLIENT_SECRET}
+      JUPYTERHUB_ALLOWED_USERS: ${JUPYTERHUB_ALLOWED_USERS}
       HUB_PUBLIC_URL: ${HUB_PUBLIC_URL:-http://127.0.0.1:8001}
       # HUB_OAUTH_CALLBACK_URL: optional in .env; when unset, Hub derives from HUB_PUBLIC_URL
       SINGLEUSER_IMAGE: lunar-navigator-singleuser
