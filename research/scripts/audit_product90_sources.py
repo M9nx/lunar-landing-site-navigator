@@ -116,6 +116,64 @@ def raster_metadata(path: Path, expected: dict[str, str] | None = None) -> dict[
         }
 
 
+def _ellipsoid_summary(crs: CRS) -> dict[str, Any] | None:
+    g = crs.geodetic_crs
+    if g is None or g.ellipsoid is None:
+        return None
+    e = g.ellipsoid
+    return {
+        "name": e.name,
+        "semi_major_m": e.semi_major_metre,
+        "semi_minor_m": e.semi_minor_metre,
+        "inverse_flattening": e.inverse_flattening,
+    }
+
+
+def _coordinate_operation_str(crs: CRS) -> str | None:
+    op = crs.coordinate_operation
+    if op is None:
+        return None
+    return str(op)
+
+
+def crs_site04_vs_product90_detail(site: CRS | None, product: CRS | None) -> dict[str, Any]:
+    """Strict vs axis-order-ignored equality and parameter summaries for JSON output."""
+    if not site or not product:
+        return {
+            "strict_equal": False,
+            "equal_ignore_axis_order": None,
+            "axis_directions": {
+                "site04": None,
+                "product90": None,
+            },
+            "ellipsoids": {"site04": None, "product90": None},
+            "coordinate_operation": {"site04": None, "product90": None},
+        }
+    strict = bool(site.equals(product))
+    equal_ignore: bool | None
+    try:
+        equal_ignore = bool(site.equals(product, ignore_axis_order=True))
+    except TypeError:
+        # pyproj too old for ignore_axis_order
+        equal_ignore = None
+    return {
+        "strict_equal": strict,
+        "equal_ignore_axis_order": equal_ignore,
+        "axis_directions": {
+            "site04": [a.direction for a in site.axis_info],
+            "product90": [a.direction for a in product.axis_info],
+        },
+        "ellipsoids": {
+            "site04": _ellipsoid_summary(site),
+            "product90": _ellipsoid_summary(product),
+        },
+        "coordinate_operation": {
+            "site04": _coordinate_operation_str(site),
+            "product90": _coordinate_operation_str(product),
+        },
+    }
+
+
 def sample_value(path: Path, x: float, y: float) -> dict[str, Any]:
     with rasterio.open(path) as ds:
         inside = ds.bounds.left <= x <= ds.bounds.right and ds.bounds.bottom <= y <= ds.bounds.top
@@ -205,6 +263,7 @@ def main() -> int:
             "site04": [a.direction for a in site04_crs.axis_info] if site04_crs else None,
             "product90": [a.direction for a in product_crs.axis_info] if product_crs else None,
         }
+        crs_site04_vs_product90 = crs_site04_vs_product90_detail(site04_crs, product_crs)
         shared_samples: list[dict[str, Any]] = []
         if not site04_crs or not product_crs:
             point = {"error": "CRS missing; cannot transform fixed point."}
@@ -265,6 +324,7 @@ def main() -> int:
             ) if crs_equal else None
         candidate_results[filename] = {
             "crs_equals_site04": crs_equal,
+            "crs_site04_vs_product90": crs_site04_vs_product90,
             "axis_directions": crs_axis_info,
             "observer_point_sample": point,
             "observer_point_roundtrip": roundtrip,
@@ -320,9 +380,12 @@ def main() -> int:
     output_path.write_text(json.dumps(json_safe(payload), indent=2) + "\n")
     print("Wrote:", output_path)
     for filename, result in candidate_results.items():
+        crs_detail = result["crs_site04_vs_product90"]
         print(
             filename,
             "CRS-equal=", result["crs_equals_site04"],
+            "CRS-equal-ignore-axis=",
+            crs_detail["equal_ignore_axis_order"],
             "observer-valid=", result["observer_point_sample"].get("is_valid"),
             "shared-valid=", result["shared_area_valid_sample_count"], "/ 25",
             "meanings: diagnostic only; compatibility verdict remains blocked",
