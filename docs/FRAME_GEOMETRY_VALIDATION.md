@@ -1,14 +1,14 @@
 # Lunar Geometry: Frame Mapping and Validation Plan
 
 **Research date:** 2026-11-06  
-**Status:** Source-level frame mapping established; coordinate implementation and benchmark results remain pending.  
+**Status:** Source-level frame mapping established; Site04 geometric baseline and B4 pass reported; B1–B3 sign-off and B5–B7 remain pending.  
 **Scope:** Site04 (Shackleton) LOLA DEM, lunar frame handling, and a reproducible first benchmark for Sun/Earth direction and local visibility.
 
 ## Executive decision
 
 NASA PGDA identifies the Site04/Site23 south-polar stereographic GeoTIFF X/Y coordinates as metres in the **MOON_ME reference frame of DE421**. The archive therefore gives us an authoritative frame label for the raster coordinates. The earlier uncertainty about whether the published map was associated with MOON_ME is resolved at the product-description level.
 
-That does **not** by itself validate our inverse-projection code, point-to-body-fixed conversion, local terrain normal, horizon test, or final Sun/Earth visibility values. Keep `SCIENCE_CALCULATIONS_READY=false` until the gates below have results recorded.
+The Site04 notebook run reports a sub-micrometre projection round trip and B4 agreement with NAIF `azlcpo` for six fixed cases. These are point- and epoch-specific checks, not validation of extent-wide coordinate behavior, ephemeris truth, local terrain normals, horizon masking, or final visibility windows. See `docs/BENCHMARK_PLAN.md` for the reported results. Keep `SCIENCE_CALCULATIONS_READY=false` while B5–B7 and benchmark-owner review remain open.
 
 ## Evidence and interpretation
 
@@ -56,7 +56,7 @@ Use `https://naif.jpl.nasa.gov/pub/naif/generic_kernels/` and the NAIF directory
 
 ## Benchmark plan and pass/fail gates
 
-These are **proposed gates**, not measured results. Record actual outcomes, software versions, inputs, and failure cases in `docs/BENCHMARK_PLAN.md` or a results notebook.
+These remain **proposed acceptance criteria**. Initial user-reported Site04 results are recorded in `docs/BENCHMARK_PLAN.md`; add exact outputs, software versions, inputs, and failure cases there as artifacts are reviewed.
 
 | Gate | Test | Proposed acceptance criterion | What it proves |
 |---|---|---|---|
