@@ -2,15 +2,53 @@
 
 **Status:** Not executed in this repository run.
 
-**Why:** NASA PGDA [Product 69](https://pgda.gsfc.nasa.gov/products/69) LOLA polar illumination / Earth-visibility reference rasters are **not** present under the local `data/` tree (only Product 78 Site04 and Product 90 COGs are mounted here). Download the product page’s **PDS-calibrated data** links (GeoTIFF and `.lbl` / PDS label) onto the **ignored** data mount — e.g. `data/LOLA_product69/<name>.tif` and `data/LOLA_product69/<name>.lbl` next to each other (see `data/README.md`) — never commit rasters or labels. B6 requires reading the **PDS labels** for the chosen file (value type, scale/offset, NoData, grid definition, epoch averaging interval, and visibility rules) before any pixel comparison at S04-P02.
+## Choose one layer before downloading
 
-**Partial manifest (raster present, labels not reviewed):** Run `python research/scripts/b6_product69_comparison.py --product69-raster /path/to/file.tif --output-json /path/to/B6_product69_manifest.json` to record path, bytes, SHA-256, CRS WKT, dtype, shape, and embedded tags — still **not** a B6 comparison until label definitions are documented.
+[Product 69](https://pgda.gsfc.nasa.gov/products/69) is a **collection** (e.g. average solar illumination, Earth visibility, permanent shadow, sky visibility). **Layers are not interchangeable** — pick the quantity that matches the benchmark question (e.g. long-term Earth-disc visibility vs long-term solar illumination fraction), then download **that** GeoTIFF and its **matching** PDS label.
 
-**What the owner must supply**
+## Earth-visibility candidate (65°S–90°S, 240 m) — documentation only
 
-1. At least one Product 69 GeoTIFF (or the authoritative path on the Hub data mount) plus its PDS label or embedded metadata sufficient to document the stored quantity and units.
-2. Confirmation of which band matches the benchmark intent (e.g. long-term average solar illumination fraction vs Earth-disc visibility fraction) and which resolution strip includes S04-P02.
+If B6 targets **average Earth visibility** at south polar **240 m** posting, the PGDA GeoTIFF and a corresponding PDS label are:
 
-**Script stub:** `research/scripts/b6_product69_comparison.py` exits with a reminder unless `--product69-raster` points at a file; it does not claim validation.
+| Role | URL |
+|------|-----|
+| GeoTIFF | `https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_65S_240M_201608_EARTH.TIF` |
+| PDS label (describes matching IMG product) | `https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_65s_240m_201608_earth.lbl` |
 
-**Caveat (from plan):** Product 69 aggregates are over ~**18.6 years**; they must **not** be used as an oracle for **2025 hourly** notebook outputs.
+Suggested local paths (gitignored): `data/LOLA_product69/AVGVISIB_65S_240M_201608_EARTH.TIF` and `data/LOLA_product69/avgvisib_65s_240m_201608_earth.lbl` (see `data/README.md`).
+
+**Label vs TIFF:** The label documents the **PDS IMG** (e.g. scale/offset for stored values, **1737.4 km** sphere, polar stereographic, ME/DE421 frame). The **converted GeoTIFF** may carry different embedded tags, NoData, and masks — **always** read both the label and **rasterio/GDAL** metadata after download. PGDA states that TIF scale/offsets are applied during conversion.
+
+**Averaging interval:** The label may list `START_TIME` / `STOP_TIME` that do **not** alone define the published long-term averaging period; the [Product 69](https://pgda.gsfc.nasa.gov/products/69) page describes average maps over a **~18.6 year** lunar nutation cycle. Do not use Product 69 as an oracle for **2025 hourly** notebook outputs.
+
+```bash
+mkdir -p data/LOLA_product69
+
+curl -fL --retry 3 \
+  -o data/LOLA_product69/AVGVISIB_65S_240M_201608_EARTH.TIF \
+  'https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_65S_240M_201608_EARTH.TIF'
+
+curl -fL --retry 3 \
+  -o data/LOLA_product69/avgvisib_65s_240m_201608_earth.lbl \
+  'https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_65s_240m_201608_earth.lbl'
+```
+
+**Why B6 can stay blocked:** Even with files present, **B6 remains blocked** until the label and TIFF are **reviewed** and a comparison definition at S04-P02 is shown compatible. Keep rasters and generated JSON under **`data/`** and **`research-results/`** (ignored); never commit them.
+
+**Raster manifest (metadata only):** After download, run (from repo root, with deps e.g. Docker `lunar-navigator-singleuser`):
+
+```bash
+python research/scripts/b6_product69_comparison.py \
+  --product69-raster data/LOLA_product69/AVGVISIB_65S_240M_201608_EARTH.TIF \
+  --output-json research-results/B6_product69_manifest.json
+```
+
+This writes checksum, CRS, dtype, tags — **not** a validated comparison.
+
+**What the owner must still supply**
+
+1. Written choice of **which Product 69 layer** matches B6 (if not Earth visibility, cite the correct PGDA files and labels).
+2. Label + TIFF review notes (quantity, units, NoData, mask, frame) and confirmation that S04-P02 lies in valid coverage at the chosen resolution.
+3. Explicit statement that long-term averages are **not** used as oracle for date-specific hourly results.
+
+**Repository rule:** `SCIENCE_CALCULATIONS_READY=false`; `/v1/compare` gated; demo stays **SYNTHETIC** until separate benchmark sign-off.
