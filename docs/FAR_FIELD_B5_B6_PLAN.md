@@ -48,6 +48,8 @@ For Site04 and each Product 90 raster, record:
 4. Elevation convention and offsets. Product 78 and Product 90 describe LDEM values as surface height in metres. The PDS LOLA RDR label defines raw HEIGHT relative to a 1,737,400 m reference radius (scale 0.5, offset 1,737,400 m). Product 90's paper says the adjusted maps were built from LOLA RDR surface-height measurements, but that raw-data convention alone does not prove the exported adjusted COGs retained the identical zero. Verify the COG tags/labels and shared-area values; do not apply a vertical shift without evidence.
 5. Actual valid-data coverage, including NoData holes, along all 720 test azimuths. The published latitude limits and nominal stereographic ranges are not proof that every required pixel is valid.
 
+The Product 90 bin-count/radial-gap diagnostic records whether each 0.5° bin has pixel-centre samples and the largest sampled radial gaps. It is diagnostic only: it does not prove continuous valid terrain along every ray, compute a terrain horizon, or establish seam acceptance. No pass threshold is applied.
+
 ### Evidence checked and current interpretation
 
 - NASA PGDA Product 78 identifies the Site04 GeoTIFFs as south-polar stereographic X/Y metres in MOON_ME/DE421; Product 90 gives the same frame/projection description for its COGs. Barker et al. (2023) likewise state that the LOLA polar products use a pole-centred stereographic projection in MOON_ME/DE421, and note a few-metre overall uncertainty of that frame relative to the principal-axis frame. These sources support the same product-level frame convention; they do not replace raster control-point checks or establish sub-metre absolute alignment.
