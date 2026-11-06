@@ -4,11 +4,11 @@
 
 Multi-user JupyterLab runs under the **`hub` Compose profile** with GitHub OAuth (separate from API login—not SSO).
 
-1. Configure `.env` (Hub OAuth app, allowlists, absolute `HOST_SHARED_NOTEBOOKS` / `HOST_DATA_PATH`).
+1. Configure `.env` (Hub OAuth app, allowlists, absolute `HOST_SHARED_NOTEBOOKS`, optional `HOST_SHARED_SCRIPTS`, and `HOST_DATA_PATH`).
 2. Build and start: `docker compose --profile hub up --build -d`
 3. Access via **`https://hub.m9nx.me`** (or your `HUB_PUBLIC_URL`) through HTTPS reverse proxy—not by publishing notebook ports.
 
-Team template notebooks from git are mounted read-only at `~/shared-readonly/` inside each user server. User work persists in Docker volume `jupyterhub-user-{username}`.
+Team template notebooks from git are mounted read-only at `~/shared-readonly/` inside each user server; `research/scripts` is mounted separately at `~/shared-readonly/scripts/`. User work persists in Docker volume `jupyterhub-user-{username}`.
 
 See [OPERATIONS.md](../docs/OPERATIONS.md) and [DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 

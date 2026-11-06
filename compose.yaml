@@ -48,6 +48,7 @@ services:
       JUPYTERHUB_NETWORK_NAME: lunar-jupyterhub
       # Absolute host paths for DockerSpawner bind mounts (set in .env for production — see OPERATIONS.md)
       HOST_SHARED_NOTEBOOKS: ${HOST_SHARED_NOTEBOOKS:-./research/notebooks}
+      HOST_SHARED_SCRIPTS: ${HOST_SHARED_SCRIPTS:-./research/scripts}
       HOST_DATA_PATH: ${HOST_DATA_PATH:-./data}
     ports:
       - "127.0.0.1:8001:8000"

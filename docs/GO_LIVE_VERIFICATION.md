@@ -6,7 +6,7 @@ The team platform code is an **implementation baseline**. Docker **build** and *
 
 ## Prerequisites
 
-- `.env` filled on the server (OAuth apps, allowlists, `SESSION_SECRET`, `API_ADMIN_TOKEN`, absolute `HOST_SHARED_NOTEBOOKS` / `HOST_DATA_PATH`).
+- `.env` filled on the server (OAuth apps, allowlists, `SESSION_SECRET`, `API_ADMIN_TOKEN`, absolute `HOST_SHARED_NOTEBOOKS`, `HOST_SHARED_SCRIPTS` (defaults to `./research/scripts` if unset), and `HOST_DATA_PATH`).
 - HTTPS reverse proxy or managed tunnel terminating TLS on the **same hostnames** used in OAuth callback URLs and `ALLOWED_ORIGINS`.
 - Two GitHub accounts for isolation tests: **User A** and **User B** (both on allowlists initially).
 - One GitHub account **not** on `JUPYTERHUB_ALLOWED_USERS` / `APPROVED_GITHUB_USERS`.

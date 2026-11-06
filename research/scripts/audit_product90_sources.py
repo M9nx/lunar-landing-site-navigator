@@ -2,8 +2,10 @@
 """Fail-closed Product 90 metadata and Site04 overlap audit.
 
 Run from JupyterHub, where the data mount is read-only and the home directory
-is writable:
-  python ~/shared-readonly/research/scripts/audit_product90_sources.py
+is writable. Team scripts are mounted at ``~/shared-readonly/scripts`` (see
+``HOST_SHARED_SCRIPTS`` in ``jupyterhub_config.py``)::
+
+  python ~/shared-readonly/scripts/audit_product90_sources.py
 
 This is a source-compatibility preflight. It does NOT validate all 720 far-field
 rays, the body-fixed frame tie, the DEM vertical datum, COG conformance, or a
