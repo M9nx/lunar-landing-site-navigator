@@ -15,6 +15,7 @@ const sunLineB = document.querySelector("#sun-line-b");
 const earthLineB = document.querySelector("#earth-line-b");
 const cursorLine = document.querySelector("#cursor-line");
 const comparisonSummary = document.querySelector("#comparison-summary");
+const sidebarSummary = document.querySelector("#sidebar-summary");
 const chartSubtitle = document.querySelector("#chart-subtitle");
 const chartSiteCaption = document.querySelector("#chart-site-caption");
 const backendStatus = document.querySelector("#backend-status");
@@ -22,11 +23,15 @@ const authStatus = document.querySelector("#auth-status");
 const apiSignIn = document.querySelector("#api-sign-in");
 const apiSignOut = document.querySelector("#api-sign-out");
 const hubLink = document.querySelector("#hub-link");
-const runsPanel = document.querySelector("#runs-panel");
 const runsList = document.querySelector("#runs-list");
 const runsEmpty = document.querySelector("#runs-empty");
+const runsSigninWall = document.querySelector("#runs-signin-wall");
+const runsAuthed = document.querySelector("#runs-authed");
 const recordStubRun = document.querySelector("#record-stub-run");
+const runsSignIn = document.querySelector("#runs-sign-in");
 const runToast = document.querySelector("#run-toast");
+
+const API_TIMEOUT_MS = 10000;
 
 let csrfToken = null;
 let toastTimer = null;
@@ -143,7 +148,9 @@ function render() {
   const date = dateInput.value || "No date selected";
   timeLabel.textContent = String(hour).padStart(2, "0") + ":00";
 
-  comparisonSummary.textContent = `${a.name} vs ${b.name} · ${date} · ${timeLabel.textContent}`;
+  const summaryLine = `${a.name} vs ${b.name} · ${date} · ${timeLabel.textContent}`;
+  comparisonSummary.textContent = summaryLine;
+  if (sidebarSummary) sidebarSummary.textContent = summaryLine;
   chartSubtitle.textContent = `Solid lines: ${a.name}. Dashed: ${b.name}. Vertical marker: hour ${timeLabel.textContent}.`;
   chartSiteCaption.textContent = `Marker at ${timeLabel.textContent}`;
 
@@ -219,7 +226,23 @@ async function apiFetch(path, options = {}) {
   const baseUrl = apiBase();
   if (!baseUrl) throw new Error("API not configured");
   const headers = { Accept: "application/json", ...(options.headers || {}) };
-  return fetch(`${baseUrl}${path}`, { ...options, headers, credentials: "include" });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    return await fetch(`${baseUrl}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function setRunsAuthed(authed) {
+  if (runsSigninWall) runsSigninWall.hidden = authed;
+  if (runsAuthed) runsAuthed.hidden = !authed;
 }
 
 async function updateBackendStatus() {
@@ -239,10 +262,13 @@ async function updateBackendStatus() {
     backendStatus.textContent = scienceReady
       ? "API reachable · science flag on (results still need validation)."
       : "API reachable · saving stubs only; preview values are browser-generated.";
-  } catch {
+  } catch (err) {
     scienceReady = false;
     backendStatus.className = "status-chip offline";
-    backendStatus.textContent = "Backend unavailable · live preview still works in the browser.";
+    const timedOut = err?.name === "AbortError";
+    backendStatus.textContent = timedOut
+      ? "API timeout · preview still works; check api.m9nx.me or CORS."
+      : "API unavailable · preview still works in the browser.";
   }
 }
 
@@ -255,8 +281,8 @@ async function refreshAuthState() {
   }
   if (!baseUrl) {
     authStatus.className = "status-chip offline";
-    authStatus.textContent = "API sign-in unavailable (no apiBaseUrl).";
-    runsPanel.hidden = true;
+    authStatus.textContent = "API URL not configured.";
+    setRunsAuthed(false);
     return;
   }
   try {
@@ -264,21 +290,22 @@ async function refreshAuthState() {
     if (!response.ok) throw new Error("not authed");
     const me = await response.json();
     authStatus.className = "status-chip online";
-    authStatus.textContent = `Signed in as ${me.user_login} · Hub is a separate login.`;
+    authStatus.textContent = `Signed in as ${me.user_login}`;
     apiSignIn.hidden = true;
     apiSignOut.hidden = false;
-    runsPanel.hidden = false;
+    setRunsAuthed(true);
     const csrfResp = await apiFetch("/auth/csrf");
     const csrfData = await csrfResp.json();
     csrfToken = csrfData.csrf_token;
     await loadRuns();
-  } catch {
+  } catch (err) {
     csrfToken = null;
     authStatus.className = "status-chip offline";
-    authStatus.textContent = "Not signed in · adjust the comparison below, then sign in to save stubs.";
+    authStatus.textContent =
+      err?.name === "AbortError" ? "Sign-in check timed out" : "Not signed in";
     apiSignIn.hidden = false;
     apiSignOut.hidden = true;
-    runsPanel.hidden = true;
+    setRunsAuthed(false);
   }
 }
 
@@ -346,6 +373,7 @@ async function createStubRun() {
 }
 
 apiSignIn?.addEventListener("click", startApiLogin);
+runsSignIn?.addEventListener("click", startApiLogin);
 apiSignOut?.addEventListener("click", apiLogout);
 recordStubRun?.addEventListener("click", createStubRun);
 

@@ -11,39 +11,66 @@
   <link rel="stylesheet" href="../assets/css/site.css">
 </head>
 <body data-page="prototype" data-root="../">
-  <a class="skip-link" href="#main">Skip to main content</a>
+  <a class="skip-link" href="#comparison-workspace">Skip to comparison</a>
   <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
   <header id="site-header" class="site-header"></header>
-  <main id="main" class="wrap prototype-main">
-    <section class="page-hero">
-      <p class="kicker">Site comparison · Early prototype</p>
-      <h1>Compare two lunar regions at a sample time.</h1>
-      <p>Adjust sites, date, and hour below — cards and chart update immediately. Sign in to the API to save what you configured (stub records until science calculations are validated).</p>
-    </section>
 
-    <div class="alert console-alert" role="status">
-      <div>
-        <strong>Simulated demo</strong>
-        <p>Angles and curves are generated in the browser for layout testing only. No ephemeris, LOLA terrain, or communications model runs on the server yet.</p>
+  <main id="main" class="prototype-shell">
+    <aside class="proto-sidebar proto-sidebar-left" aria-label="Prototype navigation and session">
+      <nav class="proto-local-nav" aria-label="On this page">
+        <h2>On this page</h2>
+        <a href="#comparison-workspace">Comparison</a>
+        <a href="#chart-section">Chart</a>
+        <a href="#runs-panel">Run history</a>
+        <a href="#explain">About</a>
+      </nav>
+
+      <div class="proto-sidebar-block">
+        <h2>Status</h2>
+        <div class="status-stack">
+          <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking API…</div>
+          <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">Checking sign-in…</div>
+        </div>
       </div>
-    </div>
 
-    <div class="status-row">
-      <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
-      <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">API sign-in: checking…</div>
-    </div>
-
-    <section class="controls auth-panel" aria-label="API session (separate from JupyterHub)">
-      <p class="auth-copy">GitHub sign-in here is for the <strong>API</strong> (run history). JupyterHub uses a separate OAuth app — use “Open research workspace” for notebooks.</p>
-      <div class="auth-actions">
-        <button type="button" class="btn btn-primary" id="api-sign-in">Sign in with GitHub (API)</button>
-        <button type="button" class="btn btn-ghost" id="api-sign-out" hidden>Sign out of API session</button>
-        <a class="btn btn-ghost" id="hub-link" href="#" rel="noopener" hidden>Open research workspace (Hub)</a>
+      <div class="proto-sidebar-block proto-auth-block" aria-label="API session">
+        <h2>API session</h2>
+        <p class="auth-copy">Separate from JupyterHub. Sign in to save comparison stubs.</p>
+        <div class="auth-actions auth-actions-stack">
+          <button type="button" class="btn btn-primary btn-block" id="api-sign-in">Sign in with GitHub</button>
+          <button type="button" class="btn btn-ghost btn-block" id="api-sign-out" hidden>Sign out</button>
+          <a class="btn btn-ghost btn-block" id="hub-link" href="#" rel="noopener" hidden>Open Hub workspace</a>
+        </div>
       </div>
-    </section>
 
-    <div class="prototype-workspace">
-      <section class="comparison-panel" aria-label="Live comparison">
+      <div class="proto-sidebar-block">
+        <h2>Current setup</h2>
+        <p id="sidebar-summary" class="sidebar-summary">—</p>
+      </div>
+
+      <div class="proto-sidebar-block proto-links-block">
+        <h2>Links</h2>
+        <a class="proto-link" href="../documents.html?doc=RESEARCH_DRAFT.md">Research draft</a>
+        <a class="proto-link" href="../documents.html?doc=DEPLOYMENT.md">Deployment</a>
+        <a class="proto-link" href="../">Project overview</a>
+      </div>
+    </aside>
+
+    <div class="proto-center">
+      <section class="page-hero page-hero-compact">
+        <p class="kicker">Site comparison · Early prototype</p>
+        <h1>Compare two lunar regions at a sample time.</h1>
+        <p>Use the center column for the live demo. Side panels hold session, saved runs, and page navigation.</p>
+      </section>
+
+      <div class="alert console-alert" role="status">
+        <div>
+          <strong>Simulated demo</strong>
+          <p>Preview values are generated in your browser. The API only stores your chosen inputs until validated science is enabled.</p>
+        </div>
+      </div>
+
+      <section id="comparison-workspace" class="comparison-panel" aria-label="Live comparison">
         <div class="comparison-panel-head">
           <div>
             <div class="kicker">Live preview</div>
@@ -62,7 +89,7 @@
 
         <section class="cards" id="results" aria-live="polite"></section>
 
-        <section class="chart-card chart-card-inset">
+        <section id="chart-section" class="chart-card chart-card-inset">
           <div class="chart-heading">
             <div>
               <div class="kicker">Synthetic curve</div>
@@ -83,32 +110,40 @@
             <path id="earth-line-b" class="line earth-line earth-line-b"></path>
             <path id="cursor-line" class="cursor-line" d="M 438 25 V 220"></path>
           </svg>
-          <p class="chart-note">Curves react to your site picks but remain illustrative — not mission data.</p>
+          <p class="chart-note">Curves react to site picks but remain illustrative — not mission data.</p>
         </section>
       </section>
 
-      <aside class="runs-sidebar chart-card" id="runs-panel" hidden aria-label="Saved API runs">
-        <div class="chart-heading runs-sidebar-head">
-          <div>
-            <div class="kicker">Run history</div>
-            <h2>Saved on API</h2>
-          </div>
-        </div>
-        <p class="runs-sidebar-copy">Each entry stores the comparison inputs you had selected. Server time and handling duration come from the API response.</p>
-        <p id="runs-empty" class="chart-note">No runs yet. Use the button below to save the current comparison as a stub.</p>
-        <ul id="runs-list" class="runs-list"></ul>
-        <button type="button" class="btn btn-primary btn-block" id="record-stub-run">Save current comparison (stub)</button>
-      </aside>
+      <section id="explain" class="explain explain-inset">
+        <h2>What this prototype demonstrates</h2>
+        <p>The controls, metrics, and chart show how a future tool could feel when real geometry is wired in. Validated runs will include frame definitions, horizon models, and versioned datasets.</p>
+      </section>
     </div>
 
-    <div id="run-toast" class="run-toast" role="status" aria-live="polite" hidden></div>
+    <aside class="proto-sidebar proto-sidebar-right chart-card" id="runs-panel" aria-label="Saved API runs">
+      <div class="chart-heading runs-sidebar-head">
+        <div>
+          <div class="kicker">Run history</div>
+          <h2>Saved on API</h2>
+        </div>
+      </div>
+      <p class="runs-sidebar-copy">Stub runs store comparison inputs, server timestamp, and API handling time.</p>
 
-    <section class="explain">
-      <h2>What this prototype demonstrates</h2>
-      <p>The controls, metrics, and chart show how a future tool could feel when real geometry is wired in. Validated runs will include frame definitions, horizon models, and versioned datasets — stub runs only persist your UI choices today.</p>
-      <p><a href="../documents.html?doc=RESEARCH_DRAFT.md">Read the research draft →</a> · <a href="../documents.html?doc=DEPLOYMENT.md">Backend setup →</a></p>
-    </section>
+      <div id="runs-signin-wall" class="runs-signin-wall">
+        <p>Sign in on the left to load and save runs.</p>
+        <button type="button" class="btn btn-primary btn-block" id="runs-sign-in">Sign in with GitHub</button>
+      </div>
+
+      <div id="runs-authed" hidden>
+        <p id="runs-empty" class="chart-note">No runs yet. Save the current comparison below.</p>
+        <ul id="runs-list" class="runs-list"></ul>
+        <button type="button" class="btn btn-primary btn-block" id="record-stub-run">Save current comparison (stub)</button>
+      </div>
+    </aside>
   </main>
+
+  <div id="run-toast" class="run-toast" role="status" aria-live="polite" hidden></div>
+
   <footer id="site-footer" class="site-footer"></footer>
   <script src="../assets/js/navigator-config.js"></script>
   <script src="../assets/js/site.js"></script>
