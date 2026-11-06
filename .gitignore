@@ -8,6 +8,7 @@ data/*
 !data/README.md
 !data/.gitkeep
 research/outputs/
+research-results/
 
 # Python and Jupyter
 __pycache__/
