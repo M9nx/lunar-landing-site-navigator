@@ -54,6 +54,7 @@
             <li><a href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/">Challenge brief</a></li>
             <li><a href="${root}documents.html?doc=SOURCES.md">Source register</a></li>
             <li><a href="${root}documents.html?doc=METHOD_DECISION.md">Method decision</a></li>
+            <li><a href="${root}documents.html?doc=FRAME_GEOMETRY_VALIDATION.md">Frame and geometry validation</a></li>
           </ul>
         </div>
       </div>

@@ -3,6 +3,7 @@
     { file: "RESEARCH_DRAFT.md", title: "Research draft", kicker: "Framing" },
     { file: "RESEARCH_UPDATE.md", title: "Research update", kicker: "Findings" },
     { file: "METHOD_DECISION.md", title: "Method decision", kicker: "Approach" },
+    { file: "FRAME_GEOMETRY_VALIDATION.md", title: "Frame & geometry validation", kicker: "Science" },
     { file: "SOURCES.md", title: "Sources", kicker: "Register" },
     { file: "TEAM_BRIEF.md", title: "Team brief", kicker: "Workflow" },
     { file: "BENCHMARK_PLAN.md", title: "Benchmark plan", kicker: "Evaluation" },
