@@ -58,6 +58,15 @@ _admin_users = {
 if _admin_users:
     c.JupyterHub.admin_users = _admin_users
 
+def _memory_limit_bytes(raw: str) -> int:
+    value = raw.strip().lower()
+    if value.endswith("g"):
+        return int(float(value[:-1]) * 1024**3)
+    if value.endswith("m"):
+        return int(float(value[:-1]) * 1024**2)
+    return int(value)
+
+
 # --- Spawner (Docker; socket only on Hub container — see compose) ---
 c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"
 c.DockerSpawner.image = os.environ["SINGLEUSER_IMAGE"]
@@ -75,7 +84,9 @@ if os.environ.get("HOST_DATA_PATH"):
 c.DockerSpawner.volumes = _volumes
 # Do not pass Hub secrets into user containers
 c.DockerSpawner.environment = {}
-c.DockerSpawner.mem_limit = os.environ.get("SINGLEUSER_MEM_LIMIT", "2g")
+c.DockerSpawner.mem_limit = _memory_limit_bytes(
+    os.environ.get("SINGLEUSER_MEM_LIMIT", "2g")
+)
 c.DockerSpawner.cpu_limit = float(os.environ.get("SINGLEUSER_CPU_LIMIT", "2"))
 c.Spawner.start_timeout = int(os.environ.get("SPAWNER_START_TIMEOUT", "300"))
 

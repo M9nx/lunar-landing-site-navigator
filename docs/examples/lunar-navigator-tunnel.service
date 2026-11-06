@@ -1,0 +1,19 @@
+# Copy to ~/.config/systemd/user/lunar-navigator-tunnel.service
+# Stop any manual `cloudflared tunnel run` first, then:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now lunar-navigator-tunnel.service
+# Optional boot without login: sudo loginctl enable-linger <linux-username>
+
+[Unit]
+Description=Lunar Navigator Cloudflare Tunnel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/cloudflared tunnel --config %h/.config/lunar-navigator/cloudflare-tunnel.yml run lunar-navigator
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
