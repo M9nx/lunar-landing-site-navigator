@@ -11,6 +11,7 @@ from auth_utils import (
     build_oauth_state,
     is_user_approved,
     new_csrf_token,
+    oauth_state_valid,
     parse_oauth_state,
     require_session,
     sign_session_id,
@@ -79,7 +80,7 @@ async def github_callback(
     oauth_state: Annotated[str | None, Cookie(alias=OAUTH_STATE_COOKIE)] = None,
     db: Session = Depends(get_db),
 ):
-    if not code or not state or not oauth_state or not secrets.compare_digest(state, oauth_state):
+    if not code or not state or not oauth_state_valid(state, oauth_state):
         raise HTTPException(status_code=400, detail="Invalid OAuth callback")
     if not settings["api_github_client_secret"]:
         raise HTTPException(status_code=503, detail="API GitHub OAuth is not configured")

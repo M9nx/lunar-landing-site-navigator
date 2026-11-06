@@ -15,6 +15,15 @@ validate_hub_url_config = _hub_url.validate_hub_url_config
 
 validate_hub_url_config()
 
+if not os.environ.get("HUB_GITHUB_CLIENT_ID", "").strip():
+    raise SystemExit(
+        "hub_config: HUB_GITHUB_CLIENT_ID is empty — set Hub OAuth app Client ID in .env"
+    )
+if not os.environ.get("HUB_GITHUB_CLIENT_SECRET", "").strip():
+    raise SystemExit(
+        "hub_config: HUB_GITHUB_CLIENT_SECRET is empty — generate secret on GitHub Hub OAuth app"
+    )
+
 c = get_config()  # noqa: F821
 
 # --- Auth (GitHub OAuth — separate app from FastAPI) ---
