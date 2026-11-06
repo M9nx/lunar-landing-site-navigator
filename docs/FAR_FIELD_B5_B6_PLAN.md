@@ -45,8 +45,18 @@ For Site04 and each Product 90 raster, record:
 1. Driver, dimensions, dtype, pixel size, affine transform, bounds, NoData, compression/COG layout, `AREA_OR_POINT`, all metadata tags, and full CRS WKT.
 2. Whether each CRS resolves to the same sphere radius (1,737,400 m), south-polar stereographic parameters, central meridian/axis convention, and geodetic coordinate interpretation as Product 78.
 3. Forward/inverse round trips at S04-P02 and several shared coordinates, including the tile corners and both Product 90 coverage edges. Compare transformed coordinates and round-trip residuals; record the exact transformations and library versions.
-4. Elevation convention and offsets. Product pages describe LDEM Z as surface height, while the 2023 paper defines these heights as elevation above the reference sphere. Confirm this against local labels/tags and shared-area samples; do not add an unverified vertical shift.
+4. Elevation convention and offsets. Product 78 and Product 90 describe LDEM values as surface height in metres. The PDS LOLA RDR label defines raw HEIGHT relative to a 1,737,400 m reference radius (scale 0.5, offset 1,737,400 m). Product 90's paper says the adjusted maps were built from LOLA RDR surface-height measurements, but that raw-data convention alone does not prove the exported adjusted COGs retained the identical zero. Verify the COG tags/labels and shared-area values; do not apply a vertical shift without evidence.
 5. Actual valid-data coverage, including NoData holes, along all 720 test azimuths. The published latitude limits and nominal stereographic ranges are not proof that every required pixel is valid.
+
+### Evidence checked and current interpretation
+
+- NASA PGDA Product 78 identifies the Site04 GeoTIFFs as south-polar stereographic X/Y metres in MOON_ME/DE421; Product 90 gives the same frame/projection description for its COGs. Barker et al. (2023) likewise state that the LOLA polar products use a pole-centred stereographic projection in MOON_ME/DE421, and note a few-metre overall uncertainty of that frame relative to the principal-axis frame. These sources support the same product-level frame convention; they do not replace raster control-point checks or establish sub-metre absolute alignment.
+- The owner-reported Hub preflight finds the projection method, numeric parameters, and ellipsoid axes match, while pyproj full CRS equality remains false. Treat that as a match in projection math, not as a completed body-fixed tie.
+- The LOLA PDS RDR label documents the 1,737,400 m reference-radius convention for raw heights. Since the adjusted Product 90 GeoTIFFs are derived outputs, confirm their vertical zero from available product metadata and shared-area diagnostics before setting `vertical_convention_verified`. The 25 shared valid samples are useful diagnostics, not a datum proof.
+
+Use these source-level findings to guide the remaining Hub checks: compare fixed map control points through both CRS definitions, document transformation/round-trip residuals and any coordinate displacement, then assess co-located elevations at a common effective resolution. Keep the frame-tie and vertical-datum flags false until the benchmark owner reviews the raster evidence.
+
+Sources: [PGDA Product 78](https://pgda.gsfc.nasa.gov/products/78), [PGDA Product 90](https://pgda.gsfc.nasa.gov/products/90), [Barker et al. (2023)](https://ntrs.nasa.gov/citations/20230014419), and [LOLA RDR SIS](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/document/rdrsis.htm).
 
 **Compatibility verdict:** `compatible`, `compatible_with_documented_transform`, or `blocked`. Record evidence for the verdict in `B5_terrain_sources.json`; matching product descriptions alone are insufficient.
 
