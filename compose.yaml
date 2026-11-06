@@ -3,12 +3,55 @@ services:
     build:
       context: ./backend
       target: api
+    env_file:
+      - .env
     environment:
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://m9nx.github.io,http://localhost:8000,http://127.0.0.1:8000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://m9nx.me,https://m9nx.github.io,http://localhost:8765,http://127.0.0.1:8765,http://localhost:8000,http://127.0.0.1:8000}
+      DATABASE_URL: sqlite:////data/navigator.db
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-http://127.0.0.1:8000}
+      SCIENCE_CALCULATIONS_READY: ${SCIENCE_CALCULATIONS_READY:-false}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/app/data:ro
+      - api-data:/data
+    restart: unless-stopped
+
+  singleuser-image:
+    build:
+      context: ./backend
+      target: singleuser
+    image: lunar-navigator-singleuser
+    profiles: ["hub"]
+    entrypoint: ["true"]
+    restart: "no"
+
+  jupyterhub:
+    build:
+      context: ./jupyterhub
+    profiles: ["hub"]
+    depends_on:
+      singleuser-image:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      HUB_PUBLIC_URL: ${HUB_PUBLIC_URL:-http://127.0.0.1:8001}
+      HUB_OAUTH_CALLBACK_URL: ${HUB_OAUTH_CALLBACK_URL:-http://127.0.0.1:8001/hub/oauth_callback}
+      SINGLEUSER_IMAGE: lunar-navigator-singleuser
+      JUPYTERHUB_NETWORK_NAME: lunar-jupyterhub
+      # Absolute host paths for DockerSpawner bind mounts (set in .env for production — see OPERATIONS.md)
+      HOST_SHARED_NOTEBOOKS: ${HOST_SHARED_NOTEBOOKS:-./research/notebooks}
+      HOST_DATA_PATH: ${HOST_DATA_PATH:-./data}
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jupyterhub-hub-db:/srv/jupyterhub
+      - ${HOST_SHARED_NOTEBOOKS:-./research/notebooks}:${HOST_SHARED_NOTEBOOKS:-./research/notebooks}:ro
+      - ${HOST_DATA_PATH:-./data}:${HOST_DATA_PATH:-./data}:ro
+    networks:
+      - jupyterhub
     restart: unless-stopped
 
   research:
@@ -24,3 +67,11 @@ services:
       - ./research/notebooks:/workspace/notebooks
       - ./data:/workspace/data:ro
     restart: unless-stopped
+
+networks:
+  jupyterhub:
+    name: lunar-jupyterhub
+
+volumes:
+  api-data:
+  jupyterhub-hub-db:

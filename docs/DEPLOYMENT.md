@@ -1,50 +1,77 @@
-# Prototype deployment: Pages frontend + Docker API
+# Deployment: Pages + team server
 
-## What this setup does
+## Architecture
 
-- GitHub Pages serves the static interface.
-- Docker runs a small FastAPI service on your computer.
-- A temporary HTTPS tunnel can make only that API reachable from the Pages site while your computer, Docker, API, and tunnel stay online.
-- JupyterLab is an optional local research environment. It stays bound to your own computer and is not routed through the public tunnel.
-- The API currently reports service health only. It does not calculate Sun/Earth geometry, terrain visibility, illumination, or communication windows.
+- **GitHub Pages** serves static files from `docs/` (team entry point).
+- **Team server** runs Docker Compose: FastAPI (`api` profile), optional **JupyterHub** (`hub` profile), optional legacy single-user Jupyter (`research` profile).
+- **Secrets** live only in server `.env`—never in Pages JavaScript or git.
 
-## Prepare the local environment
+Canonical static URLs (confirm in GitHub Pages settings):
 
-From the repository root, copy `.env.example` to `.env` and replace the example value with a long random token. Compose requires this token even when starting only the API, to ensure the notebook service cannot accidentally run without authentication. Do not commit `.env`.
+- `https://m9nx.me/lunar-landing-site-navigator/` (custom domain in use)
+- `https://m9nx.github.io/lunar-landing-site-navigator/` (default Pages URL)
 
-## Start the API locally
+Production API/Hub hostnames (example—set in `.env` and DNS):
+
+- `https://api.m9nx.me`
+- `https://hub.m9nx.me`
+
+See [OPERATIONS.md](OPERATIONS.md) for revocation, backups, CORS origins, and cookie notes.
+
+**Before public DNS:** complete [GO_LIVE_VERIFICATION.md](GO_LIVE_VERIFICATION.md). Build/health smoke tests alone are not sufficient for multi-user safety.
+
+## Prepare the server
+
+```sh
+cp .env.example .env
+# Fill secrets, allowlists, and public URLs. Never commit .env.
+```
+
+## Start the API
 
 ```sh
 docker compose up --build -d api
 ```
 
-Check `http://127.0.0.1:8000/health`. The response must include `"status": "ok"` and `"science_calculations_ready": false`.
+Check `http://127.0.0.1:8000/health`. Expect `"science_calculations_ready": false` until validated science is enabled via env after benchmark sign-off.
 
-## Start the private research environment
+## Start JupyterHub (team research workspace)
 
-When needed, start the optional research profile:
+Requires Hub GitHub OAuth app, allowlisted users, and Docker on the host.
+
+```sh
+docker compose --profile hub up --build -d
+```
+
+Hub binds **`127.0.0.1:8001`** locally. Route **`https://hub.m9nx.me`** (or your hostname) via HTTPS reverse proxy or **managed** Cloudflare Tunnel—do not publish single-user notebook ports.
+
+Hub and API use **separate GitHub OAuth apps** and **separate logins** (not SSO).
+
+## Legacy single-user Jupyter (dev fallback)
 
 ```sh
 docker compose --profile research up --build
 ```
 
-Open `http://127.0.0.1:8888` locally and enter your token. Do not publish or tunnel this port. Mission data under `data/` is mounted read-only inside both containers.
+`http://127.0.0.1:8888` with token from `.env`. Prefer Hub for team work.
 
-## Connect the Pages demo
+## Connect Pages to the API
 
-1. Start the API as above.
-2. Start a Cloudflare Quick Tunnel to the local API: `cloudflared tunnel --url http://127.0.0.1:8000`.
-3. Copy the generated HTTPS `trycloudflare.com` URL.
-4. Put that URL into `window.NAVIGATOR_CONFIG.apiBaseUrl` in `docs/prototype/config.js`, without a trailing slash.
-5. Commit the config change. GitHub Pages deploys the updated static page.
-6. Open the prototype and check its backend status badge.
+1. Point DNS/TLS at your API host (or use a managed tunnel to `127.0.0.1:8000`).
+2. Set `ALLOWED_ORIGINS` in `.env` to **exact origins** browsers use (`https://m9nx.me`, `https://m9nx.github.io`, plus local dev if needed)—no path suffixes.
+3. Update public URLs in `docs/prototype/config.js` (`apiBaseUrl`, `hubBaseUrl`)—hostnames only, no secrets.
+4. Deploy Pages from `main` (GitHub Actions).
 
-Quick Tunnel URLs are temporary and may change. Update the config and redeploy when that happens. A stable URL requires a managed tunnel and a domain. The computer must remain awake and online; Docker and the tunnel must keep running. If any stops, the static site remains available but the badge reports the API as unavailable.
+**Quick Tunnel** (`trycloudflare.com`) is acceptable for **temporary local demos** only; production should use stable hostnames in config.
 
-## CORS and exposure
+## CORS, cookies, and CSRF
 
-The API allows the GitHub Pages origin and local development origins. If using another Pages owner or custom domain, add that exact origin to `ALLOWED_ORIGINS`. The API is bound to loopback on the host; Cloudflare Tunnel makes an outbound connection from your machine. Only the API port is used for this connection. Never forward port 8888 or place secrets in frontend JavaScript or GitHub Pages files.
+- API CORS: exact-origin allowlist, `credentials` enabled for authenticated routes.
+- Session cookie lives on the **API host**; `SESSION_COOKIE_SAMESITE` depends on static-site vs API layout (`lax` for same-site subdomains; `none` may be needed for `github.io` → `api.m9nx.me`—test browsers).
+- Authenticated **writes** require `X-CSRF-Token` from `GET /auth/csrf` after API login.
 
-## Current scientific limitation
+Never tunnel Jupyter (8888/8001) for public access without Hub OAuth in front.
 
-A successful health check means only that the API answered. It does not mean scientific inputs are loaded or that computed results are valid. Keep the synthetic demo labels visible until a reproducible pipeline, validated data products, and benchmark evidence replace them.
+## Scientific limitation
+
+Health checks and run history do not imply validated lunar geometry. Prototype values stay **SYNTHETIC** until `SCIENCE_CALCULATIONS_READY=true` after team review.

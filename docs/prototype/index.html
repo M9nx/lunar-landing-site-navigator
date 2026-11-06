@@ -28,7 +28,27 @@
     </div>
     <div class="status-row">
       <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
+      <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">API sign-in: checking…</div>
     </div>
+    <section class="controls auth-panel" aria-label="API session (separate from JupyterHub)">
+      <p class="auth-copy">Sign in with GitHub to save calculation run history on the API. This is <strong>not</strong> the same login as the research workspace (JupyterHub).</p>
+      <div class="auth-actions">
+        <button type="button" class="btn btn-primary" id="api-sign-in">Sign in with GitHub (API)</button>
+        <button type="button" class="btn btn-ghost" id="api-sign-out" hidden>Sign out of API session</button>
+        <a class="btn btn-ghost" id="hub-link" href="#" rel="noopener" hidden>Open research workspace (Hub)</a>
+      </div>
+    </section>
+    <section class="chart-card" id="runs-panel" hidden aria-label="Saved API runs">
+      <div class="chart-heading">
+        <div>
+          <div class="kicker">Run history</div>
+          <h2>Saved calculation runs (API)</h2>
+        </div>
+      </div>
+      <p id="runs-empty" class="chart-note">No runs yet. Stub runs can be recorded while science calculations remain disabled.</p>
+      <ul id="runs-list" class="runs-list"></ul>
+      <button type="button" class="btn btn-ghost" id="record-stub-run">Record stub run (demo)</button>
+    </section>
     <section class="controls" aria-label="Comparison inputs">
       <label>Site A<select id="site-a"><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
       <label>Site B<select id="site-b"><option value="malapert">Malapert Massif</option><option value="shackleton">Shackleton rim</option></select></label>
@@ -61,6 +81,7 @@
     </section>
   </main>
   <footer id="site-footer" class="site-footer"></footer>
+  <script src="../assets/js/navigator-config.js"></script>
   <script src="../assets/js/site.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>

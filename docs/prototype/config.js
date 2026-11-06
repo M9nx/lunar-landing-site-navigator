@@ -1,5 +1,8 @@
-// Temporary Cloudflare Quick Tunnel. The URL changes when that process restarts.
-// This file is public on GitHub Pages; never put credentials or tokens here.
+// Public hostnames only — never put OAuth secrets or tokens here.
+// Hub and API require separate GitHub sign-ins (not SSO).
 window.NAVIGATOR_CONFIG = {
-  apiBaseUrl: "https://auditor-cited-arch-notebook.trycloudflare.com"
+  apiBaseUrl: "https://api.m9nx.me",
+  hubBaseUrl: "https://hub.m9nx.me",
+  // Static site path for return links (not a CORS Origin)
+  sitePath: "/lunar-landing-site-navigator/"
 };

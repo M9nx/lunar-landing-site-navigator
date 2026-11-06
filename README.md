@@ -6,7 +6,7 @@ Central workspace for our NASA Space Apps 2026 challenge research, prototype, ev
 
 ## Project status
 
-We are in the research and prototype-planning stage. The static interface is deployed on GitHub Pages. A Docker-based API and private data-science workspace are now scaffolded, but no validated lunar calculations are implemented yet.
+We are in the research and prototype-planning stage. The static interface is deployed on GitHub Pages. A Docker-based team API (GitHub OAuth, run history) and optional JupyterHub research workspace are scaffolded on a loopback Compose stack; validated lunar calculations are not enabled yet.
 
 Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities. LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed method is documented in [Method decision note](docs/METHOD_DECISION.md), with new product-level findings in the [research update](docs/RESEARCH_UPDATE.md).
 
@@ -18,10 +18,11 @@ Current working understanding: help users compare lunar landing sites and dates 
 - [Sources](docs/SOURCES.md) — annotated NASA, PDS, and JPL references
 - [Team research brief](docs/TEAM_BRIEF.md) — shared workflow and deliverables for every member
 - [Benchmark plan](docs/BENCHMARK_PLAN.md) — proposed accuracy, usability, and runtime measures
-- [Deployment guide](docs/DEPLOYMENT.md) — run the Docker API, private notebook environment, and optional HTTPS tunnel
+- [Deployment guide](docs/DEPLOYMENT.md) — team server Compose profiles (API, Hub, legacy research Jupyter)
+- [Operations guide](docs/OPERATIONS.md) — hostnames, CORS, revocation, backups, DockerSpawner boundary
 - [Project page](docs/index.html) — GitHub Pages landing page
 - [Prototype](docs/prototype/index.html) — interactive UI demo with clearly labeled synthetic values
-- `compose.yaml` and `backend/` — local API and optional JupyterLab Docker services
+- `compose.yaml`, `backend/`, and `jupyterhub/` — API, JupyterHub + DockerSpawner, and legacy single-user Jupyter
 
 ## Run the prototype locally
 
@@ -29,9 +30,9 @@ Open `docs/prototype/index.html` in a browser. It is a static demo and has no pa
 
 ## Backend and research environment
 
-See [Deployment guide](docs/DEPLOYMENT.md). Docker Compose starts a loopback-only API; the optional JupyterLab service is also local-only and requires a secret token in `.env`. A public HTTPS tunnel is needed for GitHub Pages visitors to reach the API while your machine is awake and online.
+See [Deployment guide](docs/DEPLOYMENT.md) and [Operations guide](docs/OPERATIONS.md). Docker Compose starts a loopback-only API and optional Hub (`--profile hub`) or legacy research Jupyter. Expose `api.m9nx.me` / `hub.m9nx.me` via HTTPS reverse proxy or managed tunnel—not raw notebook ports.
 
-The API currently exposes a health check only. It deliberately reports that science calculations are not ready. The prototype's numbers remain synthetic.
+The API exposes health, GitHub OAuth (separate from Hub), CSRF-protected run history, and a gated `/v1/compare` endpoint. Hub and API sessions are **not** SSO. The prototype UI can sign in to the API and record stub runs; displayed geometry remains **synthetic** until `SCIENCE_CALCULATIONS_READY` is explicitly enabled after benchmarks.
 
 ## GitHub Pages
 

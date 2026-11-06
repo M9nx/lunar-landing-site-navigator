@@ -1,0 +1,70 @@
+"""JupyterHub config — secrets and allowlists from environment only."""
+
+import os
+
+c = get_config()  # noqa: F821
+
+# --- Auth (GitHub OAuth — separate app from FastAPI) ---
+c.JupyterHub.authenticator_class = "github"
+c.GitHubOAuthenticator.client_id = os.environ["HUB_GITHUB_CLIENT_ID"]
+c.GitHubOAuthenticator.client_secret = os.environ["HUB_GITHUB_CLIENT_SECRET"]
+c.GitHubOAuthenticator.oauth_callback_url = os.environ.get(
+    "HUB_OAUTH_CALLBACK_URL",
+    f"{os.environ['HUB_PUBLIC_URL'].rstrip('/')}/hub/oauth_callback",
+)
+c.GitHubOAuthenticator.scope = ["read:user"]
+
+_allowed_users = {
+    u.strip()
+    for u in os.environ.get("JUPYTERHUB_ALLOWED_USERS", "").split(",")
+    if u.strip()
+}
+if _allowed_users:
+    c.Authenticator.allowed_users = _allowed_users
+
+_allowed_orgs = {
+    entry.strip()
+    for entry in os.environ.get("JUPYTERHUB_ALLOWED_ORGANIZATIONS", "").split(",")
+    if entry.strip()
+}
+if _allowed_orgs:
+    c.GitHubOAuthenticator.allowed_organizations = _allowed_orgs
+    c.GitHubOAuthenticator.scope = ["read:user", "read:org"]
+
+_admin_users = {
+    u.strip()
+    for u in os.environ.get("JUPYTERHUB_ADMIN_USERS", "").split(",")
+    if u.strip()
+}
+if _admin_users:
+    c.JupyterHub.admin_users = _admin_users
+
+# --- Spawner (Docker; socket only on Hub container — see compose) ---
+c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"
+c.DockerSpawner.image = os.environ["SINGLEUSER_IMAGE"]
+c.DockerSpawner.network_name = os.environ.get("JUPYTERHUB_NETWORK_NAME", "lunar-jupyterhub")
+c.DockerSpawner.use_internal_ip = True
+c.DockerSpawner.remove = True
+c.DockerSpawner.notebook_dir = "/home/jovyan/work"
+_volumes = {
+    "jupyterhub-user-{username}": "/home/jovyan/work",
+}
+if os.environ.get("HOST_SHARED_NOTEBOOKS"):
+    _volumes[os.environ["HOST_SHARED_NOTEBOOKS"]] = "/home/jovyan/shared-readonly:ro"
+if os.environ.get("HOST_DATA_PATH"):
+    _volumes[os.environ["HOST_DATA_PATH"]] = "/home/jovyan/data:ro"
+c.DockerSpawner.volumes = _volumes
+# Do not pass Hub secrets into user containers
+c.DockerSpawner.environment = {}
+c.DockerSpawner.mem_limit = os.environ.get("SINGLEUSER_MEM_LIMIT", "2g")
+c.DockerSpawner.cpu_limit = float(os.environ.get("SINGLEUSER_CPU_LIMIT", "2"))
+c.Spawner.start_timeout = int(os.environ.get("SPAWNER_START_TIMEOUT", "300"))
+
+# --- Hub ---
+c.JupyterHub.bind_url = "http://:8000"
+c.JupyterHub.cookie_secret_file = "/srv/jupyterhub/jupyterhub_cookie_secret"
+c.JupyterHub.db_url = os.environ.get("JUPYTERHUB_DB_URL", "sqlite:////srv/jupyterhub/jupyterhub.sqlite")
+c.JupyterHub.cleanup_servers = True
+
+# Optional idle culler (enable in production): run jupyterhub-idle-culler as a Hub service
+# and set c.JupyterHub.services — see https://github.com/jupyterhub/jupyterhub-idle-culler
