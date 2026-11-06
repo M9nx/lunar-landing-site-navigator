@@ -14,8 +14,12 @@ a large ``gap_from_inner_ring_to_first_sample_m`` (e.g. bin 313 ≈3.36 km) mean
 80 m pixels** in that azimuth corridor from the inner ring to the first sample — typically
 NoData / hole geometry in the DEM for that wedge, not an empty bin.
 
-Seam annuli (deg diffs where both finite): Site04 (4500,5000] vs 80 m (5000,5500]; 80 m
-(95000,1e5] vs 240 m (1e5,110000].
+**Boundary horizon contrast (named seam_* in manifest):** for each azimuth, compare the
+max horizon from two **adjacent, non-overlapping** along-ray annuli (e.g. Site04
+(4500,5000] vs 80 m (5000,5500]; 80 m (95000,1e5] vs 240 m (1e5,110000]). This is
+**diagnostic** boundary **contrast** between bands — it does **not** isolate a raster
+stack mismatch at **co-located** map points. Overlap-area seam checks still need
+elevations (or horizons) on **shared valid** coverage in the same geographic region.
 
 Example::
 
@@ -357,6 +361,7 @@ def max_horizon_annulus(
 
 
 def seam_stats(name: str, h_a: np.ndarray, h_b: np.ndarray) -> dict[str, Any]:
+    """Per-bin horizon difference between two **separate** annulus maxima (not co-located DEM compare)."""
     both = np.isfinite(h_a) & np.isfinite(h_b)
     diff = np.where(both, h_b - h_a, np.nan)
     finite = diff[np.isfinite(diff)]
@@ -377,6 +382,11 @@ def seam_stats(name: str, h_a: np.ndarray, h_b: np.ndarray) -> dict[str, Any]:
             )
     return {
         "name": name,
+        "kind": "adjacent_annulus_horizon_contrast_deg",
+        "interpretation": (
+            "Difference between max LOS horizon in annulus A vs annulus B per azimuth bin; "
+            "annuli are adjacent and non-overlapping by design — not co-located elevation overlap."
+        ),
         "bins_with_both_finite": int(np.sum(both)),
         "diff_deg_median": float(np.median(finite)) if finite.size else None,
         "diff_deg_p95": float(np.percentile(finite, 95)) if finite.size else None,
@@ -508,6 +518,13 @@ def main() -> int:
             "p90_240m_100000_to_cap": m240,
         },
         "seam_annulus_summaries_deg": seams,
+        "seam_annulus_summaries_interpretation": (
+            "seam_* entries compare horizon maxima from adjacent non-overlapping along-ray "
+            "annuli (different ranges and/or products). They describe boundary horizon "
+            "contrast per azimuth; they do not validate a raster seam at co-located map points. "
+            "Full B5 remains blocked until owner-approved overlap diagnostics (e.g. "
+            "elevations on mutually valid pixels in the same area) and tolerances exist."
+        ),
         "composite_horizon": {
             "description": (
                 "nanmax across bands is diagnostic only. fail_closed is nan unless all three "

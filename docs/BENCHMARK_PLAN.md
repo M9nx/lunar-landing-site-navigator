@@ -117,7 +117,7 @@ docker run --rm \
 **Measured highlights (diagnostic only):**
 
 - Product 90 native-grid coverage (720 bins, annulus per script): 80 m band 5000–100000 m — 720/720 bins with samples; global max of per-bin `largest_radial_gap_m` ≈ **3362 m** (largest inner gap before first sample on bin 313). 240 m band 100000–450000 m — 720/720 bins; global max largest gap ≈ **339 m** (native posting-limited).
-- Multiband horizon script runtime ~ **1 min** on this host; manifest `b5_verdict: blocked`, `science_calculations_ready: false`. Seam annulus degree diffs (where both finite): 5 km seam median ≈ **0.39°**, p95 ≈ **1.39°**, max |diff| ≈ **1.98°**; 100 km seam median ≈ **0.049°**, p95 ≈ **1.13°**, max |diff| ≈ **1.61°** — **no acceptance threshold** applied.
+- Multiband horizon script runtime ~ **1 min** on this host; manifest `b5_verdict: blocked`, `science_calculations_ready: false`. The reported **seam_*** summaries are **adjacent annulus horizon contrasts** (max horizon in one non-overlapping range vs max in the next) — **boundary** contrast, not co-located overlap seam validation. Example degree stats where both finite: 5 km **boundary** median ≈ **0.39°**, p95 ≈ **1.39°**, max |diff| ≈ **1.98°**; 100 km **boundary** median ≈ **0.049°**, p95 ≈ **1.13°**, max |diff| ≈ **1.61°** — **no acceptance threshold** applied; B5 remains blocked.
 - `GET /v1/benchmark/status` — SQLite round-trip latency only; **not** a science result (see `backend/routers/calc.py`).
 
 **B6:** Product 69 raster not on local `data/` — see `research/B6_PRODUCT69_BLOCKER.md`.
