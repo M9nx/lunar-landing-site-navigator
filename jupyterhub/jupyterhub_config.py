@@ -78,12 +78,18 @@ _volumes = {
     "jupyterhub-user-{username}": "/home/jovyan/work",
 }
 if os.environ.get("HOST_SHARED_NOTEBOOKS"):
-    _volumes[os.environ["HOST_SHARED_NOTEBOOKS"]] = "/home/jovyan/shared-readonly:ro"
+    _volumes[os.environ["HOST_SHARED_NOTEBOOKS"]] = {
+        "bind": "/home/jovyan/shared-readonly",
+        "mode": "ro",
+    }
 if os.environ.get("HOST_DATA_PATH"):
-    _volumes[os.environ["HOST_DATA_PATH"]] = "/home/jovyan/data:ro"
+    _volumes[os.environ["HOST_DATA_PATH"]] = {
+        "bind": "/home/jovyan/data",
+        "mode": "ro",
+    }
 c.DockerSpawner.volumes = _volumes
-# Do not pass Hub secrets into user containers
-c.DockerSpawner.environment = {}
+# DockerSpawner injects JUPYTERHUB_* for jupyterhub-singleuser; do not override with {}.
+c.DockerSpawner.args = ["--ServerApp.ip=0.0.0.0"]
 c.DockerSpawner.mem_limit = _memory_limit_bytes(
     os.environ.get("SINGLEUSER_MEM_LIMIT", "2g")
 )
@@ -92,6 +98,10 @@ c.Spawner.start_timeout = int(os.environ.get("SPAWNER_START_TIMEOUT", "300"))
 
 # --- Hub ---
 c.JupyterHub.bind_url = "http://:8000"
+# Hub API must be reachable from spawned containers on the Docker network (not 127.0.0.1 only).
+c.JupyterHub.hub_bind_url = "http://0.0.0.0:8081"
+c.JupyterHub.hub_connect_ip = os.environ.get("JUPYTERHUB_HUB_CONNECT_IP", "jupyterhub")
+c.Spawner.http_timeout = int(os.environ.get("SPAWNER_HTTP_TIMEOUT", "120"))
 c.JupyterHub.cookie_secret_file = "/var/lib/jupyterhub/jupyterhub_cookie_secret"
 c.JupyterHub.db_url = os.environ.get("JUPYTERHUB_DB_URL", "sqlite:////var/lib/jupyterhub/jupyterhub.sqlite")
 c.JupyterHub.cleanup_servers = True

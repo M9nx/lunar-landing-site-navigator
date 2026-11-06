@@ -15,14 +15,14 @@ FROM base AS singleuser
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libexpat1 \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir jupyterlab numpy pandas matplotlib spiceypy rasterio fiona shapely pyproj
+RUN pip install --no-cache-dir jupyterhub jupyterlab numpy pandas matplotlib spiceypy rasterio fiona shapely pyproj
 RUN useradd -m -s /bin/bash -u 1000 jovyan \
     && mkdir -p /home/jovyan/work /home/jovyan/shared-readonly /home/jovyan/data \
     && chown -R jovyan:jovyan /home/jovyan
 USER jovyan
 WORKDIR /home/jovyan/work
 EXPOSE 8888
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
+CMD ["jupyterhub-singleuser"]
 
 FROM base AS research
 RUN apt-get update \
