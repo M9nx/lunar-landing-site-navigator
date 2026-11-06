@@ -310,7 +310,7 @@ async function updateGatePanel() {
     const ready = health?.science_calculations_ready === true;
     const lines = [];
     lines.push(
-      "Diagnostics (API health / DB ping) are not validated lunar geometry — charts below stay SYNTHETIC until the science gate is explicitly enabled."
+      "Diagnostics (API health / DB ping) are not validated lunar geometry — the demo stays SYNTHETIC until the science gate is explicitly enabled."
     );
     lines.push(`Science gate (SCIENCE_CALCULATIONS_READY): ${ready ? "true" : "false"} — validated compare still disabled.`);
     if (bench && bench.benchmark_kind) {
@@ -419,3 +419,13 @@ render();
 updateBackendStatus();
 updateGatePanel();
 refreshAuthState();
+
+function scrollToHashTarget() {
+  const id = (location.hash || "").replace(/^#/, "");
+  if (id === "compare-demo") {
+    const el = document.getElementById("compare-demo");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+scrollToHashTarget();
+window.addEventListener("hashchange", scrollToHashTarget);

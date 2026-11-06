@@ -44,7 +44,9 @@
           <h2>Workspace</h2>
           <ul>
             <li><a href="${root}prototype/">Interactive prototype</a></li>
+            <li><a href="${root}prototype/#compare-demo">Synthetic demo (compare)</a></li>
             <li><a href="${root}documents.html?doc=RESEARCH_DRAFT.md">Research notes</a></li>
+            <li><a href="${root}documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Engine pipeline (concept)</a></li>
             <li><a href="${root}documents.html?doc=DEPLOYMENT.md">Deployment guide</a></li>
           </ul>
         </div>

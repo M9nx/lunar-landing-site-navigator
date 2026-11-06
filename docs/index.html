@@ -22,7 +22,8 @@
           <h1>Compare the lunar sky from the surface.</h1>
           <p class="lead">A team research hub and early interface for comparing candidate landing sites and dates through local Sun and Earth geometry, illumination, and direct-to-Earth visibility.</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="prototype/">Open the prototype <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn-primary" href="prototype/#compare-demo">Try the synthetic demo <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="prototype/">Open full prototype page</a>
             <a class="btn btn-ghost" id="hub-entry-link" href="#" rel="noopener">Research workspace (GitHub)</a>
             <a class="btn btn-ghost" href="documents.html?doc=RESEARCH_DRAFT.md">Read the research</a>
           </div>
@@ -59,6 +60,40 @@
         </div>
       </div>
     </div>
+
+    <section class="band band-carbon" aria-labelledby="onboard-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">First visit</p>
+            <h2 id="onboard-title">How to use the synthetic comparison</h2>
+          </div>
+        </div>
+        <ol class="flow-steps" role="list">
+          <li>
+            <span class="flow-step-num" aria-hidden="true">1</span>
+            <div>
+              <strong>Open the demo</strong>
+              <p>Use <a href="prototype/#compare-demo">Try the synthetic demo</a> (scrolls to the comparison) or the <a href="prototype/">full prototype</a>. Everything you see is <strong>SYNTHETIC</strong> until benchmarks pass.</p>
+            </div>
+          </li>
+          <li>
+            <span class="flow-step-num" aria-hidden="true">2</span>
+            <div>
+              <strong>Pick two sites and one UTC hour</strong>
+              <p>Compare side-by-side cards and the chart. Status uses words: <strong>Clear</strong>, <strong>Blocked</strong>, or <strong>Unknown (terrain gap)</strong> — never “unknown as clear.”</p>
+            </div>
+          </li>
+          <li>
+            <span class="flow-step-num" aria-hidden="true">3</span>
+            <div>
+              <strong>Read what it means</strong>
+              <p>See <a href="documents.html?doc=DEMO_DESIGN_SKETCH.md">Demo design sketch</a>, <a href="documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Engine pipeline (concept)</a>, and <a href="documents.html?doc=METHOD_DECISION.md">Method decision</a>. Optional: <a href="documents.html?doc=JUPYTER_PRACTICE_PASS.md">Jupyter practice pass</a> for Hub vs API vs browser.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
 
     <section class="band band-black" aria-labelledby="snapshot-title">
       <div class="wrap">
@@ -131,6 +166,11 @@
             <h3>Benchmark plan</h3>
             <p>Proposed accuracy, usability, and runtime metrics. No results claimed yet.</p>
             <a class="card-link" href="documents.html?doc=BENCHMARK_PLAN.md">Review metrics</a>
+          </article>
+          <article class="card">
+            <h3>Engine pipeline (training)</h3>
+            <p>Stages from terrain to visibility windows, Mermaid flow, and Clear / Blocked / Unknown contract.</p>
+            <a class="card-link" href="documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Open pipeline doc</a>
           </article>
           <article class="card">
             <h3>Docker backend</h3>

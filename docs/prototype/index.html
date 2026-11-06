@@ -19,6 +19,11 @@
       <p class="kicker">Site comparison · Training-only synthetic demo</p>
       <h1>Compare two synthetic sites at one UTC hour.</h1>
       <p>Practice the <strong>centre-ray</strong> state contract (Clear / Blocked / Unknown) against a <strong>0° geometric horizon</strong> and a <strong>synthetic terrain horizon</strong>. No NASA ephemeris, no real DEM, and no API science results are shown here.</p>
+      <p class="page-hero-links">
+        <a class="text-link" href="../">← Mission overview</a>
+        <a class="text-link" href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">Demo design sketch</a>
+        <a class="text-link" href="#optional-api">Optional: API · Hub</a>
+      </p>
     </section>
     <div class="alert console-alert" role="status">
       <div>
@@ -31,39 +36,18 @@
         </p>
       </div>
     </div>
-    <section class="chart-card" aria-label="Research and API readiness">
-      <div class="chart-heading">
-        <div>
-          <div class="kicker">Gates · not validated science</div>
-          <h2>S04-P02 path and API probes</h2>
-        </div>
-      </div>
-      <p id="gate-panel" class="chart-note">Loading readiness from API…</p>
+
+    <section class="quick-start" aria-labelledby="quick-start-title">
+      <h2 id="quick-start-title" class="quick-start-heading">Start here (about 1 minute)</h2>
+      <ol class="quick-start-list">
+        <li>Choose <strong>Site A</strong> and <strong>Site B</strong> — defaults show one site with a synthetic terrain gap (Malapert).</li>
+        <li>Move the <strong>UTC hour</strong> slider; watch the cards, comparison strip, and chart cursor.</li>
+        <li>Read the <strong>word labels</strong> for Sun and Earth (Clear / Blocked / Unknown). Colors are secondary.</li>
+      </ol>
+      <p class="quick-start-hint">Tip: Malapert at <strong>02:00 UTC</strong> → Unknown terrain gap; <strong>06:00–07:00 UTC</strong> → synthetic ridge block.</p>
     </section>
-    <div class="status-row">
-      <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
-      <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">API sign-in: checking…</div>
-    </div>
-    <section class="controls auth-panel" aria-label="API session (separate from JupyterHub)">
-      <p class="auth-copy">Sign in with GitHub to save calculation run history on the API. This is <strong>not</strong> the same login as the research workspace (JupyterHub).</p>
-      <div class="auth-actions">
-        <a class="btn btn-primary" id="api-sign-in" href="https://api.m9nx.me/auth/github/login">Sign in with GitHub (API)</a>
-        <button type="button" class="btn btn-ghost" id="api-sign-out" hidden>Sign out of API session</button>
-        <a class="btn btn-ghost" id="hub-link" href="https://hub.m9nx.me/" rel="noopener noreferrer">Open research workspace (Hub)</a>
-      </div>
-    </section>
-    <section class="chart-card" id="runs-panel" hidden aria-label="Saved API runs">
-      <div class="chart-heading">
-        <div>
-          <div class="kicker">Run history</div>
-          <h2>Saved calculation runs (API)</h2>
-        </div>
-      </div>
-      <p id="runs-empty" class="chart-note">No runs yet. Stub runs can be recorded while science calculations remain disabled.</p>
-      <ul id="runs-list" class="runs-list"></ul>
-      <button type="button" class="btn btn-ghost" id="record-stub-run">Record stub run (demo)</button>
-    </section>
-    <section class="controls" aria-label="Comparison inputs">
+
+    <section class="controls" id="compare-demo" aria-label="Comparison inputs">
       <label>Site A
         <select id="site-a" aria-describedby="controls-help"><option value="s04p02" selected>Site04 S04-P02 (anchor)</option><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif (synthetic gap)</option></select>
       </label>
@@ -114,6 +98,43 @@
         · <a href="../documents.html?doc=METHOD_DECISION.md">Method decision →</a>
       </p>
     </section>
+
+    <details class="prototype-advanced" id="optional-api">
+      <summary>Optional: API health, research Hub, and stub runs</summary>
+      <p class="prototype-advanced-lede">Expand only if you need infrastructure status or API sign-in. This does <strong>not</strong> change the synthetic demo math.</p>
+      <section class="chart-card prototype-advanced-inner" aria-label="Research and API readiness">
+        <div class="chart-heading">
+          <div>
+            <div class="kicker">Gates · not validated science</div>
+            <h2>S04-P02 path and API probes</h2>
+          </div>
+        </div>
+        <p id="gate-panel" class="chart-note">Loading readiness from API…</p>
+      </section>
+      <div class="status-row">
+        <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
+        <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">API sign-in: checking…</div>
+      </div>
+      <section class="controls auth-panel prototype-advanced-inner" aria-label="API session (separate from JupyterHub)">
+        <p class="auth-copy">Sign in with GitHub to save calculation run history on the API. This is <strong>not</strong> the same login as the research workspace (JupyterHub).</p>
+        <div class="auth-actions">
+          <a class="btn btn-primary" id="api-sign-in" href="https://api.m9nx.me/auth/github/login">Sign in with GitHub (API)</a>
+          <button type="button" class="btn btn-ghost" id="api-sign-out" hidden>Sign out of API session</button>
+          <a class="btn btn-ghost" id="hub-link" href="https://hub.m9nx.me/" rel="noopener noreferrer">Open research workspace (Hub)</a>
+        </div>
+      </section>
+      <section class="chart-card prototype-advanced-inner" id="runs-panel" hidden aria-label="Saved API runs">
+        <div class="chart-heading">
+          <div>
+            <div class="kicker">Run history</div>
+            <h2>Saved calculation runs (API)</h2>
+          </div>
+        </div>
+        <p id="runs-empty" class="chart-note">No runs yet. Stub runs can be recorded while science calculations remain disabled.</p>
+        <ul id="runs-list" class="runs-list"></ul>
+        <button type="button" class="btn btn-ghost" id="record-stub-run">Record stub run (demo)</button>
+      </section>
+    </details>
   </main>
   <footer id="site-footer" class="site-footer"></footer>
   <script src="../assets/js/navigator-config.js"></script>
