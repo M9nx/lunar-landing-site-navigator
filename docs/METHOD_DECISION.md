@@ -1,7 +1,7 @@
 # Method Decision Note
 
 **Status:** Proposed research direction; not implemented or validated.  
-**Updated:** 2026-11-05
+**Updated:** 2026-11-06
 
 ## Question
 
@@ -23,7 +23,7 @@ References:
 
 NASA PGDA lists 5 m/pixel DEMs for **Site04 (Shackleton rim)** and **Site23 (Malapert Massif)**. The page also describes slope, measurement-count, elevation-uncertainty, slope-uncertainty, and ROI shapefile products. The GeoTIFFs use south-polar stereographic coordinates in meters and the MOON_ME frame tied to ephemeris DE421.
 
-**Implication:** We have a concrete path to select documented points inside these regions and estimate a terrain skyline. Use the ROI files to find points; do not treat the region name as an exact landing coordinate. Confirm units, frame, no-data values, effective resolution, and uncertainty from each file's metadata before processing.
+**Implication:** We have a concrete path to select documented points inside these regions and estimate a terrain skyline. Use the ROI files to find points; do not treat the region name as an exact landing coordinate. Use the product documentation for the MOON_ME/DE421 frame and height above the 1,737,400 m reference sphere; still verify CRS inversion by round trip, plus NoData treatment, effective resolution, and uncertainty before terrain processing.
 
 Reference:
 - [NASA PGDA High-Resolution LOLA Topography for Lunar South Pole Sites](https://pgda.gsfc.nasa.gov/products/78)
@@ -60,6 +60,8 @@ References:
 
 **Stage A output:** date-specific geometric sky positions. Explicitly label them as geometric and not terrain-cleared.
 
+**Current working artifact:** [Site04 SPICE geometric baseline notebook](../research/notebooks/03_site04_spice_geometric_baseline.ipynb) calculates a fixed-point, 24-hour Sun/Earth geometric series and records a kernel checksum manifest. It is a runnable template and has not yet been executed or benchmark-reviewed. See the [frame and geometry validation plan](FRAME_GEOMETRY_VALIDATION.md) for the proposed gates. The notebook's radial spherical normal is a first baseline, not the DEM terrain normal.
+
 ### Stage B — Add terrain visibility
 
 1. Load a DEM covering the site and a surrounding area large enough to represent the skyline.
@@ -92,7 +94,7 @@ Recommended initial scientific scope:
 
 - Exact representative points from Site04 and Site23 ROI shapefiles.
 - Whether the supplied 5 m DEM or a smaller/faster regional product is practical.
-- Kernel names, versions, and time conversion.
+- Actual kernel hashes, successful coverage checks, and UTC-to-ET outputs from the Stage A notebook.
 - Surface-normal method: ellipsoid or DEM-derived local normal.
 - Terrain horizon algorithm and necessary radius around the point.
 - Time sampling interval and event-boundary refinement.
