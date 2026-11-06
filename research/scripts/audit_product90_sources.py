@@ -26,6 +26,9 @@ from typing import Any
 
 import numpy as np
 import rasterio
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
+from rasterio.windows import Window, from_bounds, transform as window_transform
 from pyproj import CRS, Transformer
 
 
@@ -286,6 +289,210 @@ def sample_value(path: Path, x: float, y: float) -> dict[str, Any]:
         }
 
 
+def map_control_checks(site04_path: Path, product_path: Path) -> dict[str, Any]:
+    """Round-trip fixed observer, Site04 footprint, and Product 90 corner controls.
+
+    This checks the coordinate operation between the stored CRS objects. It is
+    not an independent physical frame tie: the source products' MOON_ME/DE421
+    declarations and an external control source still require owner review.
+    """
+    with rasterio.open(site04_path) as site, rasterio.open(product_path) as product:
+        if site.crs is None or product.crs is None:
+            return {"status": "blocked", "reason": "one or both rasters have no CRS"}
+        forward = Transformer.from_crs(site.crs, product.crs, always_xy=True)
+        inverse = Transformer.from_crs(product.crs, site.crs, always_xy=True)
+
+        site_controls: list[dict[str, Any]] = [
+            {"id": POINT_ID, "x": POINT_X_M, "y": POINT_Y_M, "source": "fixed observer"},
+        ]
+        site_pixel_controls = [
+            ("site04_top_left_pixel_center", 0, 0),
+            ("site04_top_right_pixel_center", 0, site.width - 1),
+            ("site04_bottom_left_pixel_center", site.height - 1, 0),
+            ("site04_bottom_right_pixel_center", site.height - 1, site.width - 1),
+            ("site04_center_pixel_center", site.height // 2, site.width // 2),
+        ]
+        for control_id, row, col in site_pixel_controls:
+            x, y = site.xy(row, col, offset="center")
+            site_controls.append({
+                "id": control_id,
+                "x": float(x),
+                "y": float(y),
+                "row": int(row),
+                "col": int(col),
+                "source": "Site04 raster pixel centre",
+            })
+
+        product_controls = []
+        p90_pixel_controls = [
+            ("product90_top_left_pixel_center", 0, 0),
+            ("product90_top_right_pixel_center", 0, product.width - 1),
+            ("product90_bottom_left_pixel_center", product.height - 1, 0),
+            ("product90_bottom_right_pixel_center", product.height - 1, product.width - 1),
+            ("product90_center_pixel_center", product.height // 2, product.width // 2),
+        ]
+        for control_id, row, col in p90_pixel_controls:
+            x, y = product.xy(row, col, offset="center")
+            product_controls.append({
+                "id": control_id,
+                "x": float(x),
+                "y": float(y),
+                "row": int(row),
+                "col": int(col),
+                "source": "Product 90 raster pixel centre",
+            })
+
+        results = []
+        for source_name, controls, transformer, reverse in (
+            ("site04_to_product90", site_controls, forward, inverse),
+            ("product90_to_site04", product_controls, inverse, forward),
+        ):
+            for control in controls:
+                tx, ty = transformer.transform(control["x"], control["y"])
+                rx, ry = reverse.transform(tx, ty)
+                results.append({
+                    **control,
+                    "direction": source_name,
+                    "target_xy": [float(tx), float(ty)],
+                    "roundtrip_xy": [float(rx), float(ry)],
+                    "roundtrip_residual_m": float(
+                        np.hypot(rx - control["x"], ry - control["y"])
+                    ),
+                })
+
+        return {
+            "status": "diagnostic_only",
+            "site04_to_product90_operation": forward.description,
+            "product90_to_site04_operation": inverse.description,
+            "site04_to_product90_accuracy_m": forward.accuracy,
+            "product90_to_site04_accuracy_m": inverse.accuracy,
+            "controls": results,
+            "frame_tie_verified": False,
+            "interpretation": (
+                "Round-trip residuals measure CRS-operation consistency, not an "
+                "independent physical MOON_ME/DE421 frame tie or absolute raster alignment."
+            ),
+        }
+
+
+def common_resolution_elevation_comparison(
+    site04_path: Path, product_path: Path
+) -> dict[str, Any]:
+    """Average Site04 elevations to Product 90's grid and summarize differences."""
+    with rasterio.open(site04_path) as site, rasterio.open(product_path) as product:
+        if site.crs is None or product.crs is None:
+            return {"status": "blocked", "reason": "one or both rasters have no CRS"}
+
+        forward = Transformer.from_crs(site.crs, product.crs, always_xy=True)
+        inverse = Transformer.from_crs(product.crs, site.crs, always_xy=True)
+        site_corners = [
+            (site.bounds.left, site.bounds.bottom),
+            (site.bounds.left, site.bounds.top),
+            (site.bounds.right, site.bounds.bottom),
+            (site.bounds.right, site.bounds.top),
+        ]
+        mapped_corners = [forward.transform(x, y) for x, y in site_corners]
+        left = min(x for x, _ in mapped_corners)
+        right = max(x for x, _ in mapped_corners)
+        bottom = min(y for _, y in mapped_corners)
+        top = max(y for _, y in mapped_corners)
+
+        try:
+            window = from_bounds(left, bottom, right, top, transform=product.transform)
+            window = window.round_offsets().round_lengths().intersection(
+                Window(0, 0, product.width, product.height)
+            )
+        except Exception as exc:
+            return {
+                "status": "blocked",
+                "reason": "could not form the common product-grid window",
+                "error": repr(exc),
+            }
+
+        width = int(window.width)
+        height = int(window.height)
+        if width <= 0 or height <= 0:
+            return {"status": "blocked", "reason": "rasters have no pixel-window overlap"}
+
+        dst_transform = window_transform(window, product.transform)
+        site_values = site.read(1, masked=True).astype("float32").filled(np.nan)
+        aggregated_site = np.full((height, width), np.nan, dtype=np.float32)
+        reproject(
+            source=site_values,
+            destination=aggregated_site,
+            src_transform=site.transform,
+            src_crs=site.crs,
+            src_nodata=np.nan,
+            dst_transform=dst_transform,
+            dst_crs=product.crs,
+            dst_nodata=np.nan,
+            resampling=Resampling.average,
+            init_dest_nodata=True,
+        )
+
+        product_masked = product.read(1, window=window, masked=True).astype("float32")
+        product_values = product_masked.filled(np.nan)
+
+        rows, cols = np.indices((height, width), dtype=np.float64)
+        pixel_x = (
+            dst_transform.c
+            + (cols + 0.5) * dst_transform.a
+            + (rows + 0.5) * dst_transform.b
+        )
+        pixel_y = (
+            dst_transform.f
+            + (cols + 0.5) * dst_transform.d
+            + (rows + 0.5) * dst_transform.e
+        )
+        site_x, site_y = inverse.transform(pixel_x.ravel(), pixel_y.ravel())
+        site_x = np.asarray(site_x).reshape((height, width))
+        site_y = np.asarray(site_y).reshape((height, width))
+        inside_site_bounds = (
+            (site_x >= site.bounds.left)
+            & (site_x <= site.bounds.right)
+            & (site_y >= site.bounds.bottom)
+            & (site_y <= site.bounds.top)
+        )
+        common = (
+            inside_site_bounds
+            & np.isfinite(aggregated_site)
+            & np.isfinite(product_values)
+            & ~np.ma.getmaskarray(product_masked)
+        )
+        differences = (product_values - aggregated_site)[common].astype(np.float64)
+        if differences.size == 0:
+            return {
+                "status": "blocked",
+                "reason": "no common valid data at Product 90 grid resolution",
+                "target_window_shape": [height, width],
+                "resampling": "average",
+            }
+
+        median = float(np.median(differences))
+        return {
+            "status": "diagnostic_only",
+            "target_grid_resolution_m": [abs(float(v)) for v in product.res],
+            "target_window_shape": [height, width],
+            "resampling": "Site04 averaged to native Product 90 pixel grid",
+            "common_valid_cell_count": int(differences.size),
+            "site04_to_product90_operation": forward.description,
+            "median_product90_minus_site04_m": median,
+            "mean_product90_minus_site04_m": float(np.mean(differences)),
+            "mad_about_median_m": float(np.median(np.abs(differences - median))),
+            "p05_product90_minus_site04_m": float(np.percentile(differences, 5)),
+            "p95_product90_minus_site04_m": float(np.percentile(differences, 95)),
+            "min_product90_minus_site04_m": float(np.min(differences)),
+            "max_product90_minus_site04_m": float(np.max(differences)),
+            "vertical_convention_verified": False,
+            "interpretation": (
+                "Different products and resolutions can create real terrain residuals. "
+                "These statistics may reveal a constant offset but do not alone prove "
+                "the vertical datum; owner must review product metadata and choose any "
+                "acceptance tolerance before interpreting the result."
+            ),
+        }
+
+
 def find_first(paths: list[Path], pattern: str) -> Path | None:
     for root in paths:
         matches = sorted(root.glob(pattern))
@@ -415,6 +622,10 @@ def main() -> int:
                 pds.bounds.left <= POINT_X_M <= pds.bounds.right
                 and pds.bounds.bottom <= POINT_Y_M <= pds.bounds.top
             ) if crs_equal else None
+        control_checks = map_control_checks(site04_path, product_root / filename)
+        common_resolution = common_resolution_elevation_comparison(
+            site04_path, product_root / filename
+        )
         candidate_results[filename] = {
             "crs_equals_site04": crs_equal,
             "crs_site04_vs_product90": crs_site04_vs_product90,
@@ -422,6 +633,8 @@ def main() -> int:
             "observer_point_sample": point,
             "observer_point_roundtrip": roundtrip,
             "observer_xy_in_bounds_without_transform": inside_site04_bounds,
+            "map_control_checks": control_checks,
+            "common_resolution_elevation_comparison": common_resolution,
             "shared_area_samples": shared_samples,
             "shared_area_valid_sample_count": len(valid_diffs),
             "shared_area_vertical_difference_m": (
@@ -437,7 +650,7 @@ def main() -> int:
         }
 
     payload = {
-        "audit_type": "Product 90 metadata and Site04 overlap preflight",
+        "audit_type": "Product 90 metadata, control-point, and common-resolution overlap preflight",
         "run_utc": datetime.now(timezone.utc).isoformat(),
         "access_date_utc": datetime.now(timezone.utc).date().isoformat(),
         "software": {
@@ -460,8 +673,9 @@ def main() -> int:
         "compatibility_verdict": "blocked",
         "verdict_reason": (
             "This preflight records raster metadata, checksum, observer-point sampling, "
-            "round-trip, and shared-area elevation diagnostics. It does not verify the "
-            "MOON_ME frame tie, elevation datum, all 720-ray NoData coverage, or COG "
+            "round-trip, control-point, and common-resolution elevation diagnostics. It "
+            "does not independently verify the MOON_ME frame tie or vertical datum, "
+            "all 720-ray NoData coverage, or COG "
             "conformance. Owner review and those follow-up checks are required before stacking."
         ),
         "full_B5_pass": False,
@@ -483,6 +697,9 @@ def main() -> int:
             crs_detail["projection_parameters_match"],
             "observer-valid=", result["observer_point_sample"].get("is_valid"),
             "shared-valid=", result["shared_area_valid_sample_count"], "/ 25",
+            "control-points=", len(result["map_control_checks"].get("controls", [])),
+            "common-res-cells=", result["common_resolution_elevation_comparison"].get("common_valid_cell_count"),
+            "common-res-median-dz=", result["common_resolution_elevation_comparison"].get("median_product90_minus_site04_m"),
             "meanings: diagnostic only; compatibility verdict remains blocked",
         )
     print("compatibility_verdict=blocked; full_B5_pass=false; SCIENCE_CALCULATIONS_READY=false")
