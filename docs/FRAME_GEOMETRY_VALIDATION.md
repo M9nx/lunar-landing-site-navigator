@@ -1,14 +1,14 @@
 # Lunar Geometry: Frame Mapping and Validation Plan
 
 **Research date:** 2026-11-06  
-**Status:** Source-level frame mapping established; coordinate implementation and benchmark results remain pending.  
+**Status:** Source-level frame mapping established; Site04 geometric baseline and B4 pass reported; B1–B3 sign-off and B5–B7 remain pending.  
 **Scope:** Site04 (Shackleton) LOLA DEM, lunar frame handling, and a reproducible first benchmark for Sun/Earth direction and local visibility.
 
 ## Executive decision
 
 NASA PGDA identifies the Site04/Site23 south-polar stereographic GeoTIFF X/Y coordinates as metres in the **MOON_ME reference frame of DE421**. The archive therefore gives us an authoritative frame label for the raster coordinates. The earlier uncertainty about whether the published map was associated with MOON_ME is resolved at the product-description level.
 
-That does **not** by itself validate our inverse-projection code, point-to-body-fixed conversion, local terrain normal, horizon test, or final Sun/Earth visibility values. Keep `SCIENCE_CALCULATIONS_READY=false` until the gates below have results recorded.
+The Site04 notebook run reports a sub-micrometre projection round trip and B4 agreement with NAIF `azlcpo` for six fixed cases. These are point- and epoch-specific checks, not validation of extent-wide coordinate behavior, ephemeris truth, local terrain normals, horizon masking, or final visibility windows. See `docs/BENCHMARK_PLAN.md` for the reported results. Keep `SCIENCE_CALCULATIONS_READY=false` while B5–B7 and benchmark-owner review remain open.
 
 ## Evidence and interpretation
 
@@ -56,7 +56,7 @@ Use `https://naif.jpl.nasa.gov/pub/naif/generic_kernels/` and the NAIF directory
 
 ## Benchmark plan and pass/fail gates
 
-These are **proposed gates**, not measured results. Record actual outcomes, software versions, inputs, and failure cases in `docs/BENCHMARK_PLAN.md` or a results notebook.
+These remain **proposed acceptance criteria**. Initial user-reported Site04 results are recorded in `docs/BENCHMARK_PLAN.md`; add exact outputs, software versions, inputs, and failure cases there as artifacts are reviewed.
 
 | Gate | Test | Proposed acceptance criterion | What it proves |
 |---|---|---|---|
@@ -64,11 +64,13 @@ These are **proposed gates**, not measured results. Record actual outcomes, soft
 | B2: Projection | X/Y → lon/lat → X/Y for points across the Site04 extent | Maximum residual < 1e-3 m; document axis/longitude conventions | Projection implementation, not frame correctness by itself |
 | B3: Frame identity | Load DE421 kernels; inspect frame IDs and transform a fixed vector between J2000 and MOON_ME at several epochs | No missing-frame errors; output changes smoothly; exact frame/kernel manifest saved | Correct kernel and frame wiring |
 | B4: Ephemeris geometry | Compute geometric Sun/Earth az/el using both a vector-to-local-basis implementation and NAIF `azlcpo_c` with the same observer and ellipsoid normal | Absolute angular difference < 1e-6 degrees for the same target, epoch, observer, and correction | Independent angle conversion and API wiring; not independent ephemeris truth |
-| B5: DEM horizon | Compare two separately implemented horizon calculations (direct ray sampling and a high-resolution reference profile) on hand-picked clear, blocked, and grazing rays | Horizon elevation difference ≤ 0.1 degrees on the fixed test set; all edge/NoData cases handled | Terrain masking implementation |
+| B5: DEM horizon | Compare two separately implemented near-field horizon calculations on fixed clear, blocked, and grazing rays | Horizon elevation difference ≤ 0.1 degrees for the in-domain near-field rays; handle NoData and edge cases | Near-field masking only; a complete visibility horizon needs compatible far-field terrain |
 | B6: Published illumination context | Compare only a matching Site04 ROI, height, date interval, and definition against the PGDA product’s published illumination result or supplied clones | Report absolute area/fraction difference and uncertainty; threshold set only after exact definitions/data are confirmed | End-to-end illumination sanity check, not a substitute for B1–B5 |
 | B7: Runtime and API | Run a fixed 24-hour hourly series for the same two regions and capture p50/p95 latency, memory, and error responses | Target p95 < 2 seconds for cached, single-site series on the documented host; no silent synthetic fallback | Demo responsiveness and truthful failure behavior |
 
-**Important benchmark limitation:** B4 compares two angle conversions that share the same SPICE ephemeris and kernels. It can catch coordinate-frame, sign, azimuth, and local-basis mistakes, but it does not independently establish ephemeris accuracy. B6 and the kernel provenance supply separate external checks.
+**B4 limitation:** B4 compares two angle conversions that share the same SPICE ephemeris and kernels. It can catch coordinate-frame, sign, azimuth, and local-basis mistakes, but it does not independently establish ephemeris accuracy.
+
+**B5 coverage limitation:** The Site04 5 m raster is 16 × 16 km, so it can support a near-field horizon check but not the full far-field skyline. Barker et al. use a nested terrain grid for illumination: 5 m below 5 km, 80 m from 5–100 km, and 240 m at larger distances. Until compatible far-field terrain is acquired and aligned, label any horizon result as near-field-only. Reference: https://ntrs.nasa.gov/citations/20205009660
 
 ## Fixed benchmark cases
 

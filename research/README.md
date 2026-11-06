@@ -27,8 +27,8 @@ Open `http://127.0.0.1:8888` with token from `.env`. Do not expose this port pub
 - `research/notebooks/03_site04_spice_geometric_baseline.ipynb`
 - `research/notebooks/04_site04_azlcpo_b4_validation.ipynb`
 
-Notebook 03 has been run in JupyterHub for S04-P02 and produced the 24-hour geometric Sun/Earth CSV plus a kernel/run manifest. This clears the execution path and projection round-trip checks; it does not pass B4 or calculate terrain visibility.
+Notebook 03 has been run in JupyterHub for S04-P02 and produced the 24-hour geometric Sun/Earth CSV plus a kernel/run manifest. Notebook 04 was also run for six Sun/Earth × epoch cases; the owner reports B4 passed at approximately 1e-14° maximum error against the 1e-6° criterion. The B4 manifest and CSV remain in the owner's persistent Hub home and are not committed. This cross-check validates angle conversion, not independent ephemeris truth or terrain visibility.
 
-Notebook 04 compares an independently assembled ellipsoid-normal local basis against NAIF `azlcpo` for six fixed target/epoch cases. Its B4 result remains pending until a team member runs it and reviews the saved comparison and manifest. Neither notebook recommends landing sites.
+See `docs/BENCHMARK_PLAN.md` for the reported run details and open B5–B7 gates. Neither notebook recommends landing sites.
 
 See [FRAME_GEOMETRY_VALIDATION.md](../docs/FRAME_GEOMETRY_VALIDATION.md) for the coordinate pipeline, proposed gates, and team work batch.
