@@ -22,10 +22,19 @@
     </section>
     <div class="alert console-alert" role="status">
       <div>
-        <strong>Simulated demo</strong>
-        <p>All angles and indicators below are synthetic UI data. No ephemeris, LOLA terrain, or communications calculation is running.</p>
+        <strong>Simulated demo (S04-P02 flow)</strong>
+        <p>Use Site&nbsp;A <strong>Site04 S04-P02</strong> for the documented coordinate anchor. Sun/Earth curves and cards below remain <strong>synthetic</strong> until benchmark gates pass. Terrain bands, seam diagnostics, and multiband horizons live in research scripts — not in this static page.</p>
       </div>
     </div>
+    <section class="chart-card" aria-label="Research and API readiness">
+      <div class="chart-heading">
+        <div>
+          <div class="kicker">Gates · not validated science</div>
+          <h2>S04-P02 path and API probes</h2>
+        </div>
+      </div>
+      <p id="gate-panel" class="chart-note">Loading readiness from API…</p>
+    </section>
     <div class="status-row">
       <div class="status-chip offline" id="backend-status" role="status" aria-live="polite">Checking backend status…</div>
       <div class="status-chip offline" id="auth-status" role="status" aria-live="polite">API sign-in: checking…</div>
@@ -50,9 +59,9 @@
       <button type="button" class="btn btn-ghost" id="record-stub-run">Record stub run (demo)</button>
     </section>
     <section class="controls" aria-label="Comparison inputs">
-      <label>Site A<select id="site-a"><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
-      <label>Site B<select id="site-b"><option value="malapert">Malapert Massif</option><option value="shackleton">Shackleton rim</option></select></label>
-      <label>Date<input id="date" type="date" value="2026-11-14"></label>
+      <label>Site A<select id="site-a"><option value="s04p02" selected>Site04 S04-P02 (anchor)</option><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
+      <label>Site B<select id="site-b"><option value="malapert" selected>Malapert Massif</option><option value="shackleton">Shackleton rim</option><option value="s04p02">Site04 S04-P02 (anchor)</option></select></label>
+      <label>Date<input id="date" type="date" value="2025-01-01"></label>
       <label class="time-control">Sample time <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12"></label>
     </section>
     <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample</span><span>23:00</span></div>

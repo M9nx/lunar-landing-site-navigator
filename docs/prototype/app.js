@@ -1,4 +1,10 @@
 const sites = {
+  s04p02: {
+    name: "Site04 S04-P02 (documented anchor)",
+    id: "LOLA Site04 · X/Y −2652.5 / −6082.5 m (not terrain-cleared)",
+    phase: 0.15,
+    earthPhase: 1.05
+  },
   shackleton: { name: "Shackleton rim", id: "PROVISIONAL REGION · LOLA SITE04", phase: 0.15, earthPhase: 1.05 },
   malapert: { name: "Malapert Massif", id: "PROVISIONAL REGION · LOLA SITE23", phase: 1.1, earthPhase: 0.35 }
 };
@@ -20,6 +26,7 @@ const runsPanel = document.querySelector("#runs-panel");
 const runsList = document.querySelector("#runs-list");
 const runsEmpty = document.querySelector("#runs-empty");
 const recordStubRun = document.querySelector("#record-stub-run");
+const gatePanel = document.querySelector("#gate-panel");
 
 const API_TIMEOUT_MS = 10000;
 
@@ -69,13 +76,17 @@ function card(site, slot, hour, date) {
   const earth = angle(site.earthPhase, hour, 6.5, -0.3);
   const [sunState, sunClass] = visibilityText(sun);
   const [earthState, earthClass] = visibilityText(earth);
+  const s04 = site === sites.s04p02
+    ? `<div class="metric"><small>Far-field terrain (research)</small><strong>Diagnostic scripts</strong><div class="state">720×0.5° multiband horizon CSV under ignored research-results/ — not loaded here; frame/datum blocked in manifest</div></div>`
+    : "";
   return `<article class="site-card">
     <div class="site-heading"><div><div class="site-id">${site.id}</div><h2>${site.name}</h2></div><span class="demo-chip">SYNTHETIC</span></div>
     <div class="metrics">
       <div class="metric"><small>Sun elevation · illustrative</small><strong>${sun.toFixed(1)}°</strong><div class="state ${sunClass}">${sunState}</div></div>
       <div class="metric"><small>Earth elevation · illustrative</small><strong>${earth.toFixed(1)}°</strong><div class="state ${earthClass}">${earthState}</div></div>
       <div class="metric"><small>Selected sample time</small><strong>${String(hour).padStart(2,"0")}:00</strong><div class="state">${date}</div></div>
-      <div class="metric"><small>Terrain / link model</small><strong>Not included</strong><div class="state">UI demonstration only</div></div>
+      <div class="metric"><small>Terrain / link model</small><strong>Not included</strong><div class="state">UI demonstration only · not landing safety, power, or radio</div></div>
+      ${s04}
     </div>
   </article>`;
 }
@@ -127,6 +138,40 @@ async function updateBackendStatus() {
   } catch {
     backendStatus.className = "status-chip offline";
     backendStatus.textContent = "Backend unavailable · showing synthetic demo values only.";
+  }
+}
+
+async function updateGatePanel() {
+  if (!gatePanel) return;
+  const baseUrl = apiBase();
+  if (!baseUrl) {
+    gatePanel.textContent =
+      "API URL not configured — cannot probe /health or /v1/benchmark/status. Compare remains synthetic only.";
+    return;
+  }
+  try {
+    const [hRes, bRes] = await Promise.all([apiFetch("/health"), apiFetch("/v1/benchmark/status")]);
+    const health = hRes.ok ? await hRes.json() : null;
+    const bench = bRes.ok ? await bRes.json() : null;
+    const ready = health?.science_calculations_ready === true;
+    const lines = [];
+    lines.push(`Science gate (SCIENCE_CALCULATIONS_READY): ${ready ? "true" : "false"} — validated compare still disabled.`);
+    if (bench && bench.benchmark_kind) {
+      lines.push(
+        `GET /v1/benchmark/status: sqlite_ping_ms=${bench.sqlite_ping_ms ?? "?"} · ` +
+          `${bench.interpretation || "infrastructure probe only"}`
+      );
+    } else {
+      lines.push(
+        "GET /v1/benchmark/status: unavailable on this deployment (deploy API ≥ branch with benchmark route)."
+      );
+    }
+    lines.push(
+      "POST /v1/compare remains 503 while the gate is false — by design; use Hub research scripts for diagnostics."
+    );
+    gatePanel.textContent = lines.join(" ");
+  } catch {
+    gatePanel.textContent = "Could not reach API for gate panel — demo values remain synthetic.";
   }
 }
 
@@ -218,4 +263,5 @@ recordStubRun?.addEventListener("click", createStubRun);
 );
 render();
 updateBackendStatus();
+updateGatePanel();
 refreshAuthState();

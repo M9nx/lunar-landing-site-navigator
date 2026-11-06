@@ -112,3 +112,25 @@ Expected benchmark artifacts:
 - `B6_product69_comparison.json` and a small CSV: reference pixel, definitions, source metadata, modeled/reference fractions, percentage-point differences, compatibility notes.
 
 The near-field B5 result remains reported as passed. Full B5, B6, and B7 remain open pending actual data audit, execution, and benchmark-owner review. Keep `SCIENCE_CALCULATIONS_READY=false`.
+
+## Sprint record — 2026-11-06 (local workspace, not merged to `main`)
+
+Repeatable commands and version stamps are in `docs/BENCHMARK_PLAN.md` § “Far-field B5 diagnostics and B7 API probe”.
+
+**Artifacts (ignored `research-results/sprint-b5-b7-2026-11-06/`):**
+
+| File | Role |
+|------|------|
+| `B5_terrain_sources.json` | Product 90 audit output (`compatibility_verdict: blocked`) |
+| `product90_ray_cov_80m_5k_100k.json` | 80 m native-grid radial continuity / coverage |
+| `product90_ray_cov_240m_100k_450k.json` | 240 m native-grid radial continuity / coverage |
+| `multiband_horizon/S04-P02_horizon_profile_farfield.csv` | 720×0.5° per-band + composite (nanmax) horizons |
+| `multiband_horizon/B5_farfield_validation_manifest.json` | Bands, seams, `full_B5_pass: false`, blockers |
+
+**Blockers (unchanged):** independent MOON_ME/DE421 control-point proof for stacked rasters; Product 90 vertical zero vs Site04 not established from metadata alone; B6 needs Product 69 files + PDS label review (`research/B6_PRODUCT69_BLOCKER.md`).
+
+**Interpretation note (80 m bin 313):** In `product90_ray_cov_80m_5k_100k.json`, bin 313 has `gap_from_inner_ring_to_first_sample_m` ≈ **3362 m** with `first_valid_radius_m` ≈ **8362 m** — there are **1146** valid samples along the ray, so the gap is a **near-inner-ring hole** in valid pixels for that azimuth wedge (NoData / missing strip in the raster or masked values), not an empty bin. That direction is **not** continuously covered from the 5 km ring boundary to the first sample.
+
+**Composite horizons:** `research/scripts/site04_multiband_horizon_farfield.py` writes both `horizon_composite_nanmax_deg` (can hide missing-band wedges) and `horizon_composite_fail_closed_deg` (nan unless all three bands have ≥1 sample in the bin). The manifest `scope_limit` reminds that **per-bin counts still do not prove** continuous 80 m radial coverage — use the coverage diagnostic’s inner-gap fields for that.
+
+**Boundary horizon contrast vs overlap seam:** Manifest `seam_annulus_summaries_deg` compares **horizon maxima** from **adjacent, non-overlapping** along-ray annuli (e.g. just inside vs just outside a nominal distance). That is **diagnostic boundary contrast** between distance bands; it does **not** measure elevation or horizon agreement at **co-located** map points in the geographic overlap between rasters. Treating it as an accepted stack seam requires separate overlap evidence (e.g. common valid pixels and owner-set tolerances). Full B5 remains blocked.

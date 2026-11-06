@@ -51,7 +51,7 @@ This document defines evaluation methods and records Site04 runs. B1–B4 and th
 | B4: Local angle conversion | Hand-built ellipsoid-normal basis vs NAIF `azlcpo` for Sun/Earth at 00:00, 12:00, 23:00 UTC (six comparisons); maximum absolute azimuth and elevation errors each approximately 1×10⁻¹⁴°; manifest reports `B4_pass: true` | Pass against proposed 1×10⁻⁶° criterion for this point, these epochs, and these kernel inputs |
 | B5: Terrain horizon | Near-field-only comparison: 720/720 rays complete; per-bin Method A/B sample counts match; maximum absolute profile difference ≈3.6×10⁻¹⁵°; median difference 0°; manifest reports `near_field_pass: true` | Near-field subcheck passed as reported; far-field/Product 90 compatibility and full B5 remain open |
 | B6: Published illumination context | No result yet | Open |
-| B7: Runtime/API | No result yet | Open |
+| B7: Runtime/API | `GET /v1/benchmark/status` returns DB ping ms and `calculation_version` with `science_calculations_ready: false`; prototype calls it for smoke checks — **not** lunar geometry | Partial (infrastructure only); compare remains 503 |
 
 **B5 data coverage:** The Site04 5 m raster is 16 × 16 km, which supports a near-field horizon check but does not cover a full far-field skyline. Barker et al. used nested terrain products: 5 m below 5 km, 80 m from 5–100 km, and 240 m at larger distances. Product 90's 80 m and 240 m COGs are now mounted on the Hub host and have a user-reported source preflight; until frame alignment, elevation convention, and far-field coverage are verified, any completed Site04 horizon remains near-field-only. Reference: https://ntrs.nasa.gov/citations/20205009660
 
@@ -73,6 +73,54 @@ Artifacts in the owner's persistent Hub home:
 - `~/research-results/site04-spice-baseline/B5_validation_manifest.json`
 
 B4 validates the local angle conversion against NAIF's routine using the same DE421 ephemeris and kernels. It is not an independent ephemeris validation. The reported B5 near-field pass is limited to the 0–5 km sample domain and method consistency; it does not close far-field B5. Keep `SCIENCE_CALCULATIONS_READY=false` while far-field B5, B6–B7, and benchmark-owner review remain open.
+
+## Far-field B5 diagnostics and B7 API probe (2026-11-06, workspace)
+
+**Host:** Linux workstation with Docker and repo `data/` COGs mounted read-only into `lunar-navigator-singleuser`.
+
+**Software (inside container):** Python 3.12.x, rasterio 1.5.x, GDAL 3.12.x, PROJ 9.8.x (see `research-results/sprint-b5-b7-2026-11-06/B5_terrain_sources.json` → `software`).
+
+**Commands (artifacts under ignored `research-results/sprint-b5-b7-2026-11-06/`):**
+
+```sh
+docker compose --profile hub build singleuser-image
+
+docker run --rm \
+  -v "$PWD:/repo:ro" -v "$PWD/research-results:/out" lunar-navigator-singleuser:latest \
+  python3 /repo/research/scripts/audit_product90_sources.py \
+    --data-root /repo/data --output /out/sprint-b5-b7-2026-11-06/B5_terrain_sources.json
+
+docker run --rm \
+  -v "$PWD:/repo:ro" -v "$PWD/research-results:/out" lunar-navigator-singleuser:latest \
+  python3 /repo/research/scripts/product90_ray_coverage_diagnostic.py \
+    --site04 /repo/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_surf.tif \
+    --dem /repo/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF \
+    --min-range-m 5000 --max-range-m 100000 \
+    --output /out/sprint-b5-b7-2026-11-06/product90_ray_cov_80m_5k_100k.json
+
+docker run --rm \
+  -v "$PWD:/repo:ro" -v "$PWD/research-results:/out" lunar-navigator-singleuser:latest \
+  python3 /repo/research/scripts/product90_ray_coverage_diagnostic.py \
+    --site04 /repo/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_surf.tif \
+    --dem /repo/data/LOLA_20mpp/LDEM_60S_240MPP_ADJ.TIF \
+    --min-range-m 100000 --max-range-m 450000 \
+    --output /out/sprint-b5-b7-2026-11-06/product90_ray_cov_240m_100k_450k.json
+
+docker run --rm \
+  -v "$PWD:/repo:ro" -v "$PWD/research-results:/out" lunar-navigator-singleuser:latest \
+  python3 /repo/research/scripts/site04_multiband_horizon_farfield.py \
+    --data-root /repo/data --outer-cap-m 450000 \
+    --output-dir /out/sprint-b5-b7-2026-11-06/multiband_horizon \
+    --repo-commit "$(git rev-parse HEAD)"
+```
+
+**Measured highlights (diagnostic only):**
+
+- Product 90 native-grid coverage (720 bins, annulus per script): 80 m band 5000–100000 m — 720/720 bins with samples; global max of per-bin `largest_radial_gap_m` ≈ **3362 m** (largest inner gap before first sample on bin 313). 240 m band 100000–450000 m — 720/720 bins; global max largest gap ≈ **339 m** (native posting-limited).
+- Multiband horizon script runtime ~ **1 min** on this host; manifest `b5_verdict: blocked`, `science_calculations_ready: false`. The reported **seam_*** summaries are **adjacent annulus horizon contrasts** (max horizon in one non-overlapping range vs max in the next) — **boundary** contrast, not co-located overlap seam validation. Example degree stats where both finite: 5 km **boundary** median ≈ **0.39°**, p95 ≈ **1.39°**, max |diff| ≈ **1.98°**; 100 km **boundary** median ≈ **0.049°**, p95 ≈ **1.13°**, max |diff| ≈ **1.61°** — **no acceptance threshold** applied; B5 remains blocked.
+- `GET /v1/benchmark/status` — SQLite round-trip latency only; **not** a science result (see `backend/routers/calc.py`).
+
+**B6:** Product 69 raster not on local `data/` — see `research/B6_PRODUCT69_BLOCKER.md`.
 
 ## Reporting template
 
