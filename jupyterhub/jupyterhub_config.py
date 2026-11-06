@@ -2,16 +2,17 @@
 
 import os
 
+from hub_url_config import hub_oauth_callback_url, validate_hub_url_config
+
+validate_hub_url_config()
+
 c = get_config()  # noqa: F821
 
 # --- Auth (GitHub OAuth — separate app from FastAPI) ---
 c.JupyterHub.authenticator_class = "github"
 c.GitHubOAuthenticator.client_id = os.environ["HUB_GITHUB_CLIENT_ID"]
 c.GitHubOAuthenticator.client_secret = os.environ["HUB_GITHUB_CLIENT_SECRET"]
-c.GitHubOAuthenticator.oauth_callback_url = os.environ.get(
-    "HUB_OAUTH_CALLBACK_URL",
-    f"{os.environ['HUB_PUBLIC_URL'].rstrip('/')}/hub/oauth_callback",
-)
+c.GitHubOAuthenticator.oauth_callback_url = hub_oauth_callback_url()
 c.GitHubOAuthenticator.scope = ["read:user"]
 
 _allowed_users = {

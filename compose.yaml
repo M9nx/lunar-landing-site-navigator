@@ -37,7 +37,7 @@ services:
       - .env
     environment:
       HUB_PUBLIC_URL: ${HUB_PUBLIC_URL:-http://127.0.0.1:8001}
-      HUB_OAUTH_CALLBACK_URL: ${HUB_OAUTH_CALLBACK_URL:-http://127.0.0.1:8001/hub/oauth_callback}
+      # HUB_OAUTH_CALLBACK_URL: optional in .env; when unset, Hub derives from HUB_PUBLIC_URL
       SINGLEUSER_IMAGE: lunar-navigator-singleuser
       JUPYTERHUB_NETWORK_NAME: lunar-jupyterhub
       # Absolute host paths for DockerSpawner bind mounts (set in .env for production — see OPERATIONS.md)
