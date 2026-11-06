@@ -17,7 +17,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir jupyterhub jupyterlab numpy pandas matplotlib spiceypy rasterio fiona shapely pyproj
 RUN useradd -m -s /bin/bash -u 1000 jovyan \
-    && mkdir -p /home/jovyan/work /home/jovyan/shared-readonly /home/jovyan/data \
+    && mkdir -p /home/jovyan/work /home/jovyan/shared-readonly /home/jovyan/shared-scripts /home/jovyan/data \
     && chown -R jovyan:jovyan /home/jovyan
 USER jovyan
 WORKDIR /home/jovyan/work

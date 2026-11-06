@@ -82,11 +82,12 @@ if os.environ.get("HOST_SHARED_NOTEBOOKS"):
         "bind": "/home/jovyan/shared-readonly",
         "mode": "ro",
     }
-# Team Python utilities (e.g. audit_product90_sources.py) live under research/scripts;
-# notebooks alone are mounted above, so this second bind is required for those paths.
+# Team Python utilities under research/scripts. Must NOT be nested under
+# /home/jovyan/shared-readonly — that path is itself a read-only mount, so Docker
+# cannot mkdir shared-readonly/scripts for a second bind (spawn fails with EROFS).
 if os.environ.get("HOST_SHARED_SCRIPTS"):
     _volumes[os.environ["HOST_SHARED_SCRIPTS"]] = {
-        "bind": "/home/jovyan/shared-readonly/scripts",
+        "bind": "/home/jovyan/shared-scripts",
         "mode": "ro",
     }
 if os.environ.get("HOST_DATA_PATH"):

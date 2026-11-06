@@ -9,7 +9,7 @@ description: Explains which machine is the Docker host for this repo, how Jupyte
 
 - **Docker host:** The machine where `docker compose` runs for this repository (API, JupyterHub, singleuser image). It is not “the Jupyter tab in the browser”; that tab runs **inside** a container on this host.
 - **Mission data directory:** On the host, the path set by **`HOST_DATA_PATH`** in `.env` (default from Compose: **`./data`** relative to the repo — i.e. [`data/`](../../../data) at repo root). Git ignores contents under `data/*` except documented exceptions; see [`.gitignore`](../../../.gitignore).
-- **Inside the singleuser container:** That host path is mounted at **`/home/jovyan/data`** as **read-only** (`:ro`). So `touch ~/data/...` or `mkdir` under `~/data` **fails by design**; writes must happen on the **host** at `HOST_DATA_PATH`, or in the user’s writable home (e.g. `~/work`).
+- **Inside the singleuser container:** `HOST_DATA_PATH` is mounted at **`/home/jovyan/data`** as **read-only** (`:ro`). So `touch ~/data/...` or `mkdir` under `~/data` **fails by design**; writes must happen on the **host** at `HOST_DATA_PATH`, or in the user’s writable home (e.g. `~/work`). **`HOST_SHARED_SCRIPTS`** mounts at **`~/shared-scripts`** (not under `~/shared-readonly`, which is already a read-only bind and cannot nest another mount).
 
 ## Source of truth in repo
 
