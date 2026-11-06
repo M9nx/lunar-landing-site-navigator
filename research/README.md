@@ -31,6 +31,4 @@ Notebook 03 has been run in JupyterHub for S04-P02 and produced the 24-hour geom
 
 Notebook 04 compares an independently assembled ellipsoid-normal local basis against NAIF `azlcpo` for six fixed target/epoch cases. Its B4 result remains pending until a team member runs it and reviews the saved comparison and manifest. Neither notebook recommends landing sites.
 
-See [FRAME_GEOMETRY_VALIDATION.md](../docs/FRAME_GEOMETRY_VALIDATION.md) for the coordinate pipeline and proposed gates.
-
 See [FRAME_GEOMETRY_VALIDATION.md](../docs/FRAME_GEOMETRY_VALIDATION.md) for the coordinate pipeline, proposed gates, and team work batch.
