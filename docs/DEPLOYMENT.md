@@ -39,6 +39,19 @@ Check `http://127.0.0.1:8000/health`. Expect `"science_calculations_ready": fals
 
 Requires Hub GitHub OAuth app, allowlisted users, and Docker on the host.
 
+### Hub GitHub OAuth app (staging / production)
+
+Create a **separate** GitHub OAuth application from the API app. Set in `.env`:
+
+| Variable | Example (staging) |
+|----------|-------------------|
+| `HUB_PUBLIC_URL` | `https://hub.m9nx.me` |
+| `HUB_OAUTH_CALLBACK_URL` | `https://hub.m9nx.me/hub/oauth_callback` |
+
+If `HUB_OAUTH_CALLBACK_URL` is **empty**, JupyterHub derives **`${HUB_PUBLIC_URL}/hub/oauth_callback`**. Do not set a loopback callback in `.env` when `HUB_PUBLIC_URL` is a public HTTPS hostname—Hub refuses to start (see `jupyterhub/hub_url_config.py`).
+
+Register the **same** callback URL on the GitHub OAuth app. The reverse proxy must forward `https://hub.m9nx.me` → `127.0.0.1:8001`.
+
 ```sh
 docker compose --profile hub up --build -d
 ```
@@ -54,6 +67,17 @@ docker compose --profile research up --build
 ```
 
 `http://127.0.0.1:8888` with token from `.env`. Prefer Hub for team work.
+
+## Staging HTTPS (before go-live)
+
+Until `https://api.m9nx.me/health` returns JSON from your server, GitHub Pages will show **Backend unavailable** and API sign-in cannot be tested. On the team host:
+
+1. Start `docker compose up -d api` (and `--profile hub` when testing Hub).
+2. Terminate TLS on **`api.m9nx.me`** → `127.0.0.1:8000` and **`hub.m9nx.me`** → `127.0.0.1:8001` (Caddy, nginx, or Cloudflare Tunnel). Do **not** publish `:8888` or per-user notebook ports.
+3. Set `API_PUBLIC_URL=https://api.m9nx.me` and API OAuth callback `https://api.m9nx.me/auth/github/callback` on the **API** GitHub OAuth app.
+4. Run `./scripts/verify-api-automated.sh` on the host, then complete [GO_LIVE_VERIFICATION.md](GO_LIVE_VERIFICATION.md) over HTTPS.
+
+Prototype geometry stays **synthetic**; a reachable API only enables auth and run-history testing.
 
 ## Connect Pages to the API
 
