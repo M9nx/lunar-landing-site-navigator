@@ -16,14 +16,19 @@
   <header id="site-header" class="site-header"></header>
   <main id="main" class="wrap">
     <section class="page-hero">
-      <p class="kicker">Site comparison · Early prototype</p>
-      <h1>Compare two lunar regions at a sample time.</h1>
-      <p>Explore how a future navigator could compare Sun and Earth visibility across candidate landing regions and times. The numbers below are interface placeholders.</p>
+      <p class="kicker">Site comparison · Training-only synthetic demo</p>
+      <h1>Compare two synthetic sites at one UTC hour.</h1>
+      <p>Practice the <strong>centre-ray</strong> state contract (Clear / Blocked / Unknown) against a <strong>0° geometric horizon</strong> and a <strong>synthetic terrain horizon</strong>. No NASA ephemeris, no real DEM, and no API science results are shown here.</p>
     </section>
     <div class="alert console-alert" role="status">
       <div>
-        <strong>Simulated demo (S04-P02 flow)</strong>
-        <p>Use Site&nbsp;A <strong>Site04 S04-P02</strong> for the documented coordinate anchor. Sun/Earth curves and cards below remain <strong>synthetic</strong> until benchmark gates pass. Terrain bands, seam diagnostics, and multiband horizons live in research scripts — not in this static page.</p>
+        <strong>SYNTHETIC · not validated challenge output</strong>
+        <p>
+          Values follow explicit rules in <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">ENGINE_CALCULATION_PIPELINE.md</a>
+          and <a href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">DEMO_DESIGN_SKETCH.md</a>.
+          Product 78/90/69 and research notebooks are <strong>practice only</strong> for Hub workflows — not ground truth here.
+          <strong>SCIENCE_CALCULATIONS_READY</strong> remains false; <code>POST /v1/compare</code> stays gated.
+        </p>
       </div>
     </div>
     <section class="chart-card" aria-label="Research and API readiness">
@@ -59,34 +64,55 @@
       <button type="button" class="btn btn-ghost" id="record-stub-run">Record stub run (demo)</button>
     </section>
     <section class="controls" aria-label="Comparison inputs">
-      <label>Site A<select id="site-a"><option value="s04p02" selected>Site04 S04-P02 (anchor)</option><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif</option></select></label>
-      <label>Site B<select id="site-b"><option value="malapert" selected>Malapert Massif</option><option value="shackleton">Shackleton rim</option><option value="s04p02">Site04 S04-P02 (anchor)</option></select></label>
-      <label>Date<input id="date" type="date" value="2025-01-01"></label>
-      <label class="time-control">Sample time <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12"></label>
+      <label>Site A
+        <select id="site-a" aria-describedby="controls-help"><option value="s04p02" selected>Site04 S04-P02 (anchor)</option><option value="shackleton">Shackleton rim</option><option value="malapert">Malapert Massif (synthetic gap)</option></select>
+      </label>
+      <label>Site B
+        <select id="site-b" aria-describedby="controls-help"><option value="malapert" selected>Malapert Massif (synthetic gap)</option><option value="shackleton">Shackleton rim</option><option value="s04p02">Site04 S04-P02 (anchor)</option></select>
+      </label>
+      <label>Date (label only)<input id="date" type="date" value="2025-01-01" aria-describedby="controls-help"></label>
+      <label class="time-control">Sample time UTC <span id="time-label">12:00</span><input id="time" type="range" min="0" max="23" value="12" aria-valuemin="0" aria-valuemax="23" aria-valuenow="12" aria-label="Sample hour UTC"></label>
+      <p id="controls-help" class="controls-help">Use keyboard: Tab to fields, arrow keys in selects and the hour slider. Try Malapert near hour <strong>02:00 UTC</strong> for a synthetic terrain <strong>Unknown</strong> sector (azimuth 30°).</p>
     </section>
-    <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample</span><span>23:00</span></div>
+    <div class="time-scale"><span>00:00</span><span>Illustrative 24-hour sample · SYNTHETIC</span><span>23:00</span></div>
     <section class="cards" id="results" aria-live="polite"></section>
+    <section class="compare-strip-wrap" id="compare-strip" aria-label="Same time comparison of two sites"></section>
     <section class="chart-card">
       <div class="chart-heading">
         <div>
-          <div class="kicker">Synthetic curve</div>
-          <h2>Illustrative elevation through the sample interval</h2>
+          <div class="kicker">Synthetic curves and horizons</div>
+          <h2>Elevation vs geometric (0°) and synthetic terrain horizon</h2>
         </div>
-        <div class="legend"><span><i class="sun"></i>Sun</span><span><i class="earth"></i>Earth</span></div>
+        <div class="legend" aria-label="Chart legend">
+          <span><i class="sun"></i>Sun elev.</span>
+          <span><i class="earth"></i>Earth elev.</span>
+          <span><i class="h-geo"></i>Geometric horizon (0°)</span>
+          <span><i class="h-terrain-a"></i>Terrain Site A</span>
+          <span><i class="h-terrain-b"></i>Terrain Site B</span>
+        </div>
       </div>
-      <svg id="chart" viewBox="0 0 800 250" role="img" aria-label="Synthetic Sun and Earth elevation curves">
+      <svg id="chart" viewBox="0 0 800 250" role="img" aria-labelledby="chart-title chart-desc">
+        <title id="chart-title">Synthetic Sun, Earth, and horizon lines</title>
+        <desc id="chart-desc">Training chart: two body elevation curves, a 0 degree horizontal horizon, and two stepped synthetic terrain horizons. Not real lunar geometry.</desc>
         <g class="gridlines"><path d="M55 30H780 M55 82H780 M55 134H780 M55 186H780 M55 220H780"/></g>
         <g class="axis-labels"><text x="12" y="34">+15°</text><text x="25" y="86">+7.5°</text><text x="38" y="138">0°</text><text x="20" y="190">−7.5°</text><text x="31" y="224">−12°</text><text x="55" y="244">00</text><text x="410" y="244">12</text><text x="760" y="244">23</text></g>
+        <path id="geo-horizon-line" class="line horizon-geo-line" d="M55 134 H780"></path>
+        <path id="terrain-horizon-line-a" class="line horizon-terrain-a"></path>
+        <path id="terrain-horizon-line-b" class="line horizon-terrain-b"></path>
         <path id="sun-line" class="line sun-line"></path>
         <path id="earth-line" class="line earth-line"></path>
         <path id="cursor-line" class="cursor-line" d="M 438 25 V 220"></path>
       </svg>
-      <p class="chart-note">The plotted curves are illustrative only and must not be used for mission planning.</p>
+      <p class="chart-note">Curves and terrain silhouettes are invented for UI practice. Try hour 6 or 7 on Malapert for a synthetic <strong>ridge</strong> block; hour 2 for <strong>unknown</strong> gap.</p>
     </section>
     <section class="explain">
       <h2>What this prototype demonstrates</h2>
-      <p>It demonstrates the comparison interaction and labels intended for a future data-backed tool. A validated version will need date-specific Sun and Earth geometry, documented coordinates and reference frames, and a stated horizon model. Terrain-clear visibility and radio-link availability must be distinguished.</p>
-      <p><a href="../documents.html?doc=RESEARCH_DRAFT.md">Read the research draft →</a> · <a href="../documents.html?doc=DEPLOYMENT.md">Backend setup →</a></p>
+      <p>It rehearses <strong>two-site / one-time</strong> comparison and explicit <strong>Clear / Blocked / Unknown</strong> text (centre-ray vs terrain, not finite disc or power). Jupyter and real rasters stay in the Hub; see <a href="../documents.html?doc=JUPYTER_PRACTICE_PASS.md">JUPYTER_PRACTICE_PASS.md</a>.</p>
+      <p>
+        <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">Engine pipeline (concept) →</a>
+        · <a href="../documents.html?doc=DATASET_INTAKE_CHECKLIST.md">Dataset intake checklist →</a>
+        · <a href="../documents.html?doc=METHOD_DECISION.md">Method decision →</a>
+      </p>
     </section>
   </main>
   <footer id="site-footer" class="site-footer"></footer>

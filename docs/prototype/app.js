@@ -1,21 +1,78 @@
+/**
+ * Synthetic training demo — no validated lunar geometry or terrain.
+ * State contract: see docs/ENGINE_CALCULATION_PIPELINE.md and tests/test_horizon_visibility_semantics.py
+ */
+
+const SIMULATION = {
+  label:
+    "SYNTHETIC local-plane model: invented elevations, azimuths, and terrain rules. Not Product 78/90/69.",
+  geometricHorizonDeg: 0,
+  /** Sun azimuth (deg): advances 15° per hour for illustration. */
+  sunAzimuthDeg(hour) {
+    return (hour * 15) % 360;
+  },
+  /** Earth azimuth (deg): offset from sun for illustration. */
+  earthAzimuthDeg(hour) {
+    return (hour * 15 + 140) % 360;
+  },
+  /** Per-site terrain horizon along azimuth; unknown sector → not clear. */
+  terrainHorizon(siteKey, azDeg) {
+    const a = ((azDeg % 360) + 360) % 360;
+    if (siteKey === "malapert") {
+      if (a >= 20 && a <= 40) return { elevationDeg: null, terrainKnown: false };
+      if (a >= 80 && a <= 100) return { elevationDeg: 12, terrainKnown: true };
+      return { elevationDeg: 0, terrainKnown: true };
+    }
+    return { elevationDeg: 0, terrainKnown: true };
+  },
+};
+
+function classifyCentreRay(targetElDeg, horizonDeg, terrainKnown) {
+  if (!terrainKnown || horizonDeg === null || Number.isNaN(horizonDeg)) {
+    return { code: "unknown", label: "Unknown (terrain gap)", detail: "Terrain not known on this ray; not treated as clear." };
+  }
+  if (Number.isNaN(targetElDeg)) {
+    return { code: "unknown", label: "Unknown", detail: "Invalid target angle." };
+  }
+  if (targetElDeg > horizonDeg) {
+    return { code: "clear", label: "Clear", detail: "Centre ray above synthetic terrain horizon (known terrain)." };
+  }
+  return { code: "blocked", label: "Blocked", detail: "Centre ray at or below synthetic terrain horizon (known terrain)." };
+}
+
 const sites = {
   s04p02: {
     name: "Site04 S04-P02 (documented anchor)",
     id: "LOLA Site04 · X/Y −2652.5 / −6082.5 m (not terrain-cleared)",
     phase: 0.15,
-    earthPhase: 1.05
+    earthPhase: 1.05,
   },
-  shackleton: { name: "Shackleton rim", id: "PROVISIONAL REGION · LOLA SITE04", phase: 0.15, earthPhase: 1.05 },
-  malapert: { name: "Malapert Massif", id: "PROVISIONAL REGION · LOLA SITE23", phase: 1.1, earthPhase: 0.35 }
+  shackleton: {
+    name: "Shackleton rim",
+    id: "PROVISIONAL REGION · LOLA SITE04",
+    phase: 0.15,
+    earthPhase: 1.05,
+  },
+  malapert: {
+    name: "Malapert Massif",
+    id: "PROVISIONAL REGION · LOLA SITE23",
+    phase: 1.1,
+    earthPhase: 0.35,
+  },
 };
+
 const siteA = document.querySelector("#site-a");
 const siteB = document.querySelector("#site-b");
 const dateInput = document.querySelector("#date");
 const timeInput = document.querySelector("#time");
 const timeLabel = document.querySelector("#time-label");
 const results = document.querySelector("#results");
+const compareStrip = document.querySelector("#compare-strip");
 const sunLine = document.querySelector("#sun-line");
 const earthLine = document.querySelector("#earth-line");
+const geoHorizonLine = document.querySelector("#geo-horizon-line");
+const terrainHorizonLineA = document.querySelector("#terrain-horizon-line-a");
+const terrainHorizonLineB = document.querySelector("#terrain-horizon-line-b");
 const cursorLine = document.querySelector("#cursor-line");
 const backendStatus = document.querySelector("#backend-status");
 const authStatus = document.querySelector("#auth-status");
@@ -56,48 +113,145 @@ function angle(phase, hour, amplitude, offset = 0) {
   return offset + amplitude * Math.sin((2 * Math.PI * hour) / 24 + phase);
 }
 function toY(deg) {
-  const top = 30, bottom = 220, min = -12, max = 15;
+  const top = 30;
+  const bottom = 220;
+  const min = -12;
+  const max = 15;
   return bottom - ((deg - min) / (max - min)) * (bottom - top);
 }
+
 function makePath(phase, amplitude, offset) {
   const points = [];
   for (let hour = 0; hour < 24; hour += 1) {
     const x = 55 + (hour / 23) * 725;
     const y = toY(angle(phase, hour, amplitude, offset));
-    points.push((hour === 0 ? "M" : "L") + " " + x.toFixed(1) + " " + y.toFixed(1));
+    points.push((hour === 0 ? "M" : "L") + ` ${x.toFixed(1)} ${y.toFixed(1)}`);
   }
   return points.join(" ");
 }
-function visibilityText(value) {
-  return value > 0 ? ["Above geometric horizon", "positive"] : ["Below geometric horizon", "negative"];
+
+/** Horizontal line at fixed elevation (degrees). */
+function makeHorizonPath(elevationDeg) {
+  const y = toY(elevationDeg);
+  return `M 55 ${y.toFixed(1)} H 780`;
 }
-function card(site, slot, hour, date) {
+
+/** Terrain horizon vs time: sample at Sun azimuth each hour (synthetic rule). */
+function makeTerrainHorizonPath(siteKey, getPhaseAmpOff) {
+  const [, amplitude, offset] = getPhaseAmpOff;
+  const phase = getPhaseAmpOff[0];
+  const points = [];
+  for (let hour = 0; hour < 24; hour += 1) {
+    const x = 55 + (hour / 23) * 725;
+    const az = SIMULATION.sunAzimuthDeg(hour);
+    const { elevationDeg, terrainKnown } = SIMULATION.terrainHorizon(siteKey, az);
+    const yDeg =
+      terrainKnown && elevationDeg !== null ? elevationDeg : SIMULATION.geometricHorizonDeg;
+    const y = toY(yDeg);
+    points.push((hour === 0 ? "M" : "L") + ` ${x.toFixed(1)} ${y.toFixed(1)}`);
+  }
+  return points.join(" ");
+}
+
+function bodyRow(label, elevationDeg, azDeg, horizonInfo, geometricHorizonDeg) {
+  const geoState = classifyCentreRay(elevationDeg, geometricHorizonDeg, true);
+  const terrState = classifyCentreRay(elevationDeg, horizonInfo.elevationDeg, horizonInfo.terrainKnown);
+  return `
+    <div class="visibility-block" role="group" aria-label="${label} centre-ray vs horizons">
+      <h3 class="visibility-heading">${label}</h3>
+      <p class="visibility-meta">Synthetic azimuth ${azDeg.toFixed(0)}° · elevation ${elevationDeg.toFixed(1)}° (illustrative)</p>
+      <div class="visibility-grid">
+        <div class="metric metric-visibility">
+          <small>vs geometric horizon (${geometricHorizonDeg}°)</small>
+          <strong class="status-text">${geoState.label}</strong>
+          <div class="state">${geoState.detail}</div>
+        </div>
+        <div class="metric metric-visibility">
+          <small>vs synthetic terrain horizon</small>
+          <strong class="status-text">${terrState.label}</strong>
+          <div class="state">${terrState.detail}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function card(siteKey, slot, hour, date) {
+  const site = sites[siteKey];
   const sun = angle(site.phase, hour, 8.2, -0.7);
   const earth = angle(site.earthPhase, hour, 6.5, -0.3);
-  const [sunState, sunClass] = visibilityText(sun);
-  const [earthState, earthClass] = visibilityText(earth);
-  const s04 = site === sites.s04p02
-    ? `<div class="metric"><small>Far-field terrain (research)</small><strong>Diagnostic scripts</strong><div class="state">720×0.5° multiband horizon CSV under ignored research-results/ — not loaded here; frame/datum blocked in manifest</div></div>`
-    : "";
-  return `<article class="site-card">
-    <div class="site-heading"><div><div class="site-id">${site.id}</div><h2>${site.name}</h2></div><span class="demo-chip">SYNTHETIC</span></div>
-    <div class="metrics">
-      <div class="metric"><small>Sun elevation · illustrative</small><strong>${sun.toFixed(1)}°</strong><div class="state ${sunClass}">${sunState}</div></div>
-      <div class="metric"><small>Earth elevation · illustrative</small><strong>${earth.toFixed(1)}°</strong><div class="state ${earthClass}">${earthState}</div></div>
-      <div class="metric"><small>Selected sample time</small><strong>${String(hour).padStart(2,"0")}:00</strong><div class="state">${date}</div></div>
-      <div class="metric"><small>Terrain / link model</small><strong>Not included</strong><div class="state">UI demonstration only · not landing safety, power, or radio</div></div>
+  const sunAz = SIMULATION.sunAzimuthDeg(hour);
+  const earthAz = SIMULATION.earthAzimuthDeg(hour);
+  const sunH = SIMULATION.terrainHorizon(siteKey, sunAz);
+  const earthH = SIMULATION.terrainHorizon(siteKey, earthAz);
+  const s04 =
+    siteKey === "s04p02"
+      ? `<div class="metric"><small>Research note</small><strong>Practice data</strong><div class="state">Product 90/69 diagnostics in Hub only — not validated challenge output.</div></div>`
+      : "";
+
+  return `<article class="site-card" data-site="${siteKey}">
+    <div class="site-heading">
+      <div><div class="site-id">${site.id}</div><h2>${site.name}</h2><p class="slot-label">Compare slot ${slot} · same UTC hour</p></div>
+      <span class="demo-chip">SYNTHETIC</span>
+    </div>
+    <p class="sim-contract">${SIMULATION.label}</p>
+    <div class="metrics metrics-visibility">
+      ${bodyRow("Sun", sun, sunAz, sunH, SIMULATION.geometricHorizonDeg)}
+      ${bodyRow("Earth", earth, earthAz, earthH, SIMULATION.geometricHorizonDeg)}
+      <div class="metric">
+        <small>Selected sample time (UTC)</small>
+        <strong>${String(hour).padStart(2, "0")}:00</strong>
+        <div class="state">${date}</div>
+      </div>
+      <div class="metric">
+        <small>Not modeled here</small>
+        <strong>Finite disc · power · RF</strong>
+        <div class="state">Centre-ray only; not solar power or comms link (see ENGINE_CALCULATION_PIPELINE.md).</div>
+      </div>
       ${s04}
     </div>
   </article>`;
 }
+
+function compareCell(siteKey, hour) {
+  const site = sites[siteKey];
+  const sun = angle(site.phase, hour, 8.2, -0.7);
+  const earth = angle(site.earthPhase, hour, 6.5, -0.3);
+  const sAz = SIMULATION.sunAzimuthDeg(hour);
+  const eAz = SIMULATION.earthAzimuthDeg(hour);
+  const sunH = SIMULATION.terrainHorizon(siteKey, sAz);
+  const earthH = SIMULATION.terrainHorizon(siteKey, eAz);
+  const sunSt = classifyCentreRay(sun, sunH.elevationDeg, sunH.terrainKnown);
+  const earthSt = classifyCentreRay(earth, earthH.elevationDeg, earthH.terrainKnown);
+  return `<div class="compare-cell">
+    <h3 class="compare-cell-title">${site.name}</h3>
+    <p><strong>Sun vs terrain:</strong> ${sunSt.label}</p>
+    <p><strong>Earth vs terrain:</strong> ${earthSt.label}</p>
+  </div>`;
+}
+
 function render() {
-  const a = sites[siteA.value], b = sites[siteB.value];
+  const keyA = siteA.value;
+  const keyB = siteB.value;
+  const a = sites[keyA];
+  const b = sites[keyB];
   const hour = Number(timeInput.value);
   const date = dateInput.value || "No date selected";
-  timeLabel.textContent = String(hour).padStart(2, "0") + ":00";
-  results.innerHTML = card(a, "A", hour, date) + card(b, "B", hour, date);
+  timeLabel.textContent = `${String(hour).padStart(2, "0")}:00`;
+  if (timeInput) {
+    timeInput.setAttribute("aria-valuenow", String(hour));
+  }
+
+  results.innerHTML = card(keyA, "A", hour, date) + card(keyB, "B", hour, date);
+  if (compareStrip) {
+    compareStrip.innerHTML = `<h2 class="compare-strip-title">Same-time comparison (synthetic)</h2><div class="compare-row">${compareCell(keyA, hour)}${compareCell(keyB, hour)}</div>`;
+  }
+
   sunLine?.setAttribute("d", makePath(a.phase, 8.2, -0.7));
   earthLine?.setAttribute("d", makePath(a.earthPhase, 6.5, -0.3));
+  geoHorizonLine?.setAttribute("d", makeHorizonPath(SIMULATION.geometricHorizonDeg));
+  terrainHorizonLineA?.setAttribute("d", makeTerrainHorizonPath(keyA, [a.phase, 8.2, -0.7]));
+  terrainHorizonLineB?.setAttribute("d", makeTerrainHorizonPath(keyB, [b.phase, 8.2, -0.7]));
+
   const x = 55 + (hour / 23) * 725;
   cursorLine?.setAttribute("d", `M ${x.toFixed(1)} 25 V 220`);
 }
@@ -113,7 +267,7 @@ async function apiFetch(path, options = {}) {
       ...options,
       headers,
       credentials: "include",
-      signal: controller.signal
+      signal: controller.signal,
     });
   } finally {
     clearTimeout(timeoutId);
@@ -165,9 +319,7 @@ async function updateGatePanel() {
           (bench.interpretation || "infrastructure probe only (not ephemeris or terrain).")
       );
     } else {
-      lines.push(
-        "GET /v1/benchmark/status: unavailable on this deployment (deploy API ≥ branch with benchmark route)."
-      );
+      lines.push("GET /v1/benchmark/status: unavailable on this deployment (deploy API ≥ branch with benchmark route).");
     }
     lines.push(
       "[Not validated] POST /v1/compare returns 503 while the gate is false — by design; use Hub research scripts for terrain diagnostics."
@@ -229,7 +381,7 @@ async function apiLogout() {
   if (!csrfToken) return;
   await apiFetch("/auth/logout", {
     method: "POST",
-    headers: { "X-CSRF-Token": csrfToken }
+    headers: { "X-CSRF-Token": csrfToken },
   });
   csrfToken = null;
   await refreshAuthState();
@@ -242,7 +394,7 @@ async function createStubRun() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-CSRF-Token": csrfToken
+      "X-CSRF-Token": csrfToken,
     },
     body: JSON.stringify({
       inputs: {
@@ -250,9 +402,9 @@ async function createStubRun() {
         site_b: siteB.value,
         date: dateInput.value,
         sample_hour: hour,
-        note: "stub from prototype UI"
-      }
-    })
+        note: "stub from prototype UI",
+      },
+    }),
   });
   if (response.ok) await loadRuns();
 }
@@ -261,9 +413,8 @@ bindAuthLinks();
 apiSignOut?.addEventListener("click", apiLogout);
 recordStubRun?.addEventListener("click", createStubRun);
 
-[siteA, siteB, dateInput, timeInput].forEach((control) =>
-  control?.addEventListener("input", render)
-);
+[siteA, siteB, dateInput, timeInput].forEach((control) => control?.addEventListener("input", render));
+
 render();
 updateBackendStatus();
 updateGatePanel();
