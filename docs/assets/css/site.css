@@ -657,6 +657,17 @@ body.theme-docs .site-footer {
   margin: 8px 2px 24px;
 }
 
+.controls-help {
+  grid-column: 1 / -1;
+  margin: 0 2px 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--label);
+  line-height: 1.5;
+  border: 1px solid #2f2f36;
+  background: #121216;
+}
+
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .site-card,
 .chart-card {
@@ -681,6 +692,7 @@ body.theme-docs .site-footer {
   letter-spacing: .08em;
 }
 .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.metrics-visibility { grid-template-columns: 1fr; }
 .metric { border-top: 1px solid #2f2f36; padding-top: 12px; }
 .metric small { display: block; color: var(--muted); font-size: 12px; }
 .metric strong { display: block; font-family: var(--font-ui); font-size: 1.35rem; margin-top: 4px; }
@@ -688,19 +700,107 @@ body.theme-docs .site-footer {
 .positive { color: var(--green); }
 .negative { color: var(--danger); }
 
+.visibility-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+.visibility-block { margin-bottom: 4px; }
+.visibility-heading {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  margin: 0 0 4px;
+  color: var(--white);
+}
+.visibility-meta { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+.slot-label { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.sim-contract {
+  font-size: 12px;
+  color: var(--gold);
+  margin: 10px 0 0;
+  line-height: 1.45;
+}
+.metric-visibility .status-text { font-size: 1.1rem; }
+
+.compare-strip-wrap {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.compare-strip-title {
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+  margin: 0 0 12px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.compare-cell {
+  background: linear-gradient(180deg, #16161b, #101014);
+  border: 1px solid #2a2a30;
+  padding: 18px;
+}
+.compare-cell-title { font-size: 1rem; margin: 0 0 8px; font-family: var(--font-ui); }
+.compare-cell p { margin: 6px 0; font-size: 14px; color: #c8c8ce; }
+
 .chart-card { margin-top: 16px; }
 .chart-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; }
 .chart-heading h2 { font-family: var(--font-ui); font-size: 1.25rem; margin: 6px 0 0; }
-.legend { display: flex; gap: 14px; color: var(--muted); font-size: 13px; }
-.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 420px;
+  justify-content: flex-end;
+}
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .legend .sun { background: var(--sun); }
 .legend .earth { background: var(--earth); }
+.legend .h-geo {
+  width: 14px;
+  height: 3px;
+  border-radius: 0;
+  background: #8d8d92;
+}
+.legend .h-terrain-a {
+  width: 14px;
+  height: 3px;
+  border-radius: 0;
+  background: var(--gold);
+}
+.legend .h-terrain-b {
+  width: 14px;
+  height: 3px;
+  border-radius: 0;
+  background: var(--green);
+}
 .chart-card svg { width: 100%; height: auto; margin-top: 14px; overflow: visible; }
 .gridlines path { stroke: #2f2f36; stroke-width: 1; }
 .axis-labels { fill: #8a8a90; font-size: 11px; font-family: var(--font-mono); }
 .line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .sun-line { stroke: var(--sun); }
 .earth-line { stroke: var(--earth); }
+.horizon-geo-line {
+  stroke: #8d8d92;
+  stroke-width: 2;
+  stroke-dasharray: 8 5;
+  opacity: 0.95;
+}
+.horizon-terrain-a {
+  stroke: var(--gold);
+  stroke-width: 2;
+  opacity: 0.9;
+}
+.horizon-terrain-b {
+  stroke: var(--green);
+  stroke-width: 2;
+  opacity: 0.85;
+}
 .cursor-line { stroke: #fff; stroke-width: 1; stroke-dasharray: 4 5; opacity: .55; }
 .chart-note { color: #8d8d92; font-size: 13px; }
 
@@ -768,7 +868,10 @@ body.theme-docs .site-footer {
   .site-nav.is-open { display: flex; }
   .site-nav a { padding: 14px 8px; border-bottom: 1px solid #222; }
   .controls, .cards { grid-template-columns: 1fr; }
+  .compare-row { grid-template-columns: 1fr; }
+  .visibility-grid { grid-template-columns: 1fr; }
   .chart-heading { flex-direction: column; align-items: start; }
+  .legend { justify-content: flex-start; max-width: none; }
   .hero { padding-top: 40px; }
 }
 
