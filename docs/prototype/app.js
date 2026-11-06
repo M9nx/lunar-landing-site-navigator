@@ -63,18 +63,24 @@ const sites = {
     id: "LOLA Site04 · X/Y −2652.5 / −6082.5 m",
     phase: 0.15,
     earthPhase: 1.05,
+    lat: -89.78,
+    lon: -156.44,
   },
   shackleton: {
     name: "Shackleton rim",
     id: "PROVISIONAL · LOLA SITE04",
     phase: 0.15,
     earthPhase: 1.05,
+    lat: -89.54,
+    lon: 129.2,
   },
   malapert: {
     name: "Malapert Massif",
     id: "PROVISIONAL · LOLA SITE23",
     phase: 1.1,
     earthPhase: 0.35,
+    lat: -86.0,
+    lon: 2.7,
   },
 };
 
@@ -194,6 +200,39 @@ function polarXY(azDeg, elDeg) {
   };
 }
 
+function sunGlyph() {
+  const rays = [0, 45, 90, 135, 180, 225, 270, 315]
+    .map((a) => `<rect class="sky-sun-ray" x="-1.15" y="-17" width="2.3" height="6.5" rx="1" transform="rotate(${a})"/>`)
+    .join("");
+  return `
+    <circle r="18" class="sky-pulse"/>
+    <circle r="14" class="sky-sun-halo"/>
+    <g class="sky-sun-rays">${rays}</g>
+    <circle r="7.4" class="sky-sun-core"/>`;
+}
+
+function earthGlyph() {
+  return `
+    <circle r="16" class="sky-pulse earth-pulse"/>
+    <circle r="12" class="sky-earth-halo"/>
+    <circle r="8" class="sky-earth-core"/>
+    <ellipse class="sky-earth-eq" rx="8" ry="3.1"/>
+    <path class="sky-earth-mer" d="M0,-8 A3.1,8 0 0 0 0,8 A3.1,8 0 0 0 0,-8"/>
+    <path class="sky-earth-land" d="M-5,-1 C-3,-4 1,-5 4,-2 C5,1 1,4 -2,3 C-5,2 -6,1 -5,-1Z"/>`;
+}
+
+function landerGlyph() {
+  return `
+    <g class="sky-lander" aria-hidden="true">
+      <rect x="-5.5" y="-3.5" width="11" height="6.5" rx="1.4"/>
+      <circle cx="0" cy="-6.6" r="2.1"/>
+      <path d="M-4.5 3 L-9.5 12 M4.5 3 L9.5 12 M0 3 L0 11"/>
+      <circle cx="-9.5" cy="12" r="1.15"/>
+      <circle cx="9.5" cy="12" r="1.15"/>
+      <circle cx="0" cy="11" r="1.15"/>
+    </g>`;
+}
+
 function skySvgMarkup(prefix) {
   const rings = [0, 8, 15].map((el) => {
     const r = polarRadius(el);
@@ -206,7 +245,11 @@ function skySvgMarkup(prefix) {
     [270, "W"],
   ].map(([az, lab]) => {
     const p = polarXY(az, -11);
-    return `<text class="sky-dir" x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${lab}</text>`;
+    const rose =
+      lab === "N"
+        ? `<path class="sky-compass" d="M ${p.x.toFixed(1)} ${(p.y - 16).toFixed(1)} l 4.2 11 -4.2 -2.6 -4.2 2.6 z"/>`
+        : "";
+    return `${rose}<text class="sky-dir" x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${lab}</text>`;
   }).join("");
   return `
     <svg class="sky-svg" viewBox="0 0 440 470" role="img" aria-labelledby="${prefix}-title">
@@ -235,21 +278,20 @@ function skySvgMarkup(prefix) {
       ${dirs}
       <g id="${prefix}-ray-sun" class="sky-ray"></g>
       <g id="${prefix}-ray-earth" class="sky-ray earth-ray"></g>
+      <g class="sky-observer" transform="translate(${POLAR.cx} ${POLAR.cy})">
+        ${landerGlyph()}
+      </g>
       <g id="${prefix}-sun" class="sky-marker sky-sun" filter="url(#${prefix}-glow)">
-        <circle r="18" class="sky-pulse"/>
-        <circle r="14" class="sky-sun-halo"/>
-        <circle r="7" class="sky-sun-core"/>
-        <text class="marker-name" y="-22" text-anchor="middle">Sun</text>
-        <text class="marker-el" id="${prefix}-sun-el" y="28" text-anchor="middle"></text>
+        ${sunGlyph()}
+        <text class="marker-name" y="-24" text-anchor="middle">Sun</text>
+        <text class="marker-el" id="${prefix}-sun-el" y="30" text-anchor="middle"></text>
       </g>
       <g id="${prefix}-earth" class="sky-marker sky-earth" filter="url(#${prefix}-glow)">
-        <circle r="16" class="sky-pulse earth-pulse"/>
-        <circle r="12" class="sky-earth-halo"/>
-        <circle r="6" class="sky-earth-core"/>
-        <text class="marker-name earth-name" y="-20" text-anchor="middle">Earth</text>
-        <text class="marker-el" id="${prefix}-earth-el" y="26" text-anchor="middle"></text>
+        ${earthGlyph()}
+        <text class="marker-name earth-name" y="-22" text-anchor="middle">Earth</text>
+        <text class="marker-el" id="${prefix}-earth-el" y="28" text-anchor="middle"></text>
       </g>
-      <text class="sky-zenith" x="${POLAR.cx}" y="${POLAR.cy - 8}" text-anchor="middle">zenith</text>
+      <text class="sky-zenith" x="${POLAR.cx}" y="${POLAR.cy - 18}" text-anchor="middle">zenith</text>
       <text class="sky-caption" x="${POLAR.cx}" y="454" text-anchor="middle">Inward = higher elevation · brown = terrain · hatch = no data</text>
     </svg>`;
 }
@@ -339,10 +381,14 @@ function snapshot(siteKey, hour) {
   };
 }
 
+function ico(name) {
+  return `<iconify-icon icon="${name}" aria-hidden="true"></iconify-icon>`;
+}
+
 function pillsHtml(snap) {
   return `
-    <span class="status-pill status-${snap.sunSt.code}" title="${snap.sunSt.detail}">Sun ${snap.sunSt.short}</span>
-    <span class="status-pill status-${snap.earthSt.code}" title="${snap.earthSt.detail}">Earth ${snap.earthSt.short}</span>`;
+    <span class="status-pill status-${snap.sunSt.code}" title="${snap.sunSt.detail}">${ico("lucide:sun")} Sun ${snap.sunSt.short}</span>
+    <span class="status-pill status-${snap.earthSt.code}" title="${snap.earthSt.detail}">${ico("lucide:earth")} Earth ${snap.earthSt.short}</span>`;
 }
 
 function marginDeg(el, horizon, known) {
@@ -374,7 +420,7 @@ function meterHtml(label, el, h, st) {
   const marginTxt = m === null ? "margin n/a (unknown ray)" : `margin ${m >= 0 ? "+" : ""}${m.toFixed(1)}° vs terrain`;
   return `
     <div class="meter" data-state="${st.code}">
-      <div class="meter-head"><span>${label}</span><span>${el.toFixed(1)}° · ${st.short}</span></div>
+      <div class="meter-head"><span>${ico(label === "Sun" ? "lucide:sun" : "lucide:earth")} ${label}</span><span>${el.toFixed(1)}° · ${st.short}</span></div>
       <div class="meter-track" aria-hidden="true">
         <span class="meter-geo" style="left:${pct(0)}"></span>
         ${terrPct !== null ? `<span class="meter-terr" style="left:${terrPct}"></span>` : ""}
@@ -491,14 +537,14 @@ function render() {
       <div class="hud-grid">
         <div class="hud-cell">
           <p class="hud-kicker">Site A · ${snapA.site.name}</p>
-          <p><span class="status-pill status-${snapA.sunSt.code}">Sun ${snapA.sunSt.short}</span>
-             <span class="status-pill status-${snapA.earthSt.code}">Earth ${snapA.earthSt.short}</span></p>
+          <p><span class="status-pill status-${snapA.sunSt.code}">${ico("lucide:sun")} Sun ${snapA.sunSt.short}</span>
+             <span class="status-pill status-${snapA.earthSt.code}">${ico("lucide:earth")} Earth ${snapA.earthSt.short}</span></p>
           <p class="hud-detail">${snapA.sunSt.detail}</p>
         </div>
         <div class="hud-cell">
           <p class="hud-kicker">Site B · ${snapB.site.name}</p>
-          <p><span class="status-pill status-${snapB.sunSt.code}">Sun ${snapB.sunSt.short}</span>
-             <span class="status-pill status-${snapB.earthSt.code}">Earth ${snapB.earthSt.short}</span></p>
+          <p><span class="status-pill status-${snapB.sunSt.code}">${ico("lucide:sun")} Sun ${snapB.sunSt.short}</span>
+             <span class="status-pill status-${snapB.earthSt.code}">${ico("lucide:earth")} Earth ${snapB.earthSt.short}</span></p>
           <p class="hud-detail">${snapB.earthSt.detail}</p>
         </div>
       </div>`;
@@ -522,6 +568,7 @@ function render() {
     earthNow.setAttribute("cx", x.toFixed(1));
     earthNow.setAttribute("cy", earthY.toFixed(1));
   }
+  updateGlobe(keyA, keyB, hour);
   markersReady = true;
 }
 
@@ -743,7 +790,287 @@ async function createStubRun() {
   if (response.ok) await loadRuns();
 }
 
+function latLonToVec(lat, lon, radius) {
+  const phi = ((90 - lat) * Math.PI) / 180;
+  const theta = ((lon + 180) * Math.PI) / 180;
+  return new window.THREE.Vector3(
+    -radius * Math.sin(phi) * Math.cos(theta),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+function craterTexture() {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#b7aea3";
+  ctx.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 220; i += 1) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const r = 2 + Math.random() * 18;
+    ctx.fillStyle = `rgba(70,64,58,${0.12 + Math.random() * 0.25})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(40,40,48,0.35)";
+  ctx.fillRect(0, 470, 512, 42);
+  return new window.THREE.CanvasTexture(c);
+}
+
+function earthTexture() {
+  const c = document.createElement("canvas");
+  c.width = 128;
+  c.height = 64;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#1b4f8c";
+  ctx.fillRect(0, 0, 128, 64);
+  ctx.fillStyle = "#2f8f56";
+  [
+    [18, 22, 28, 16],
+    [52, 18, 22, 14],
+    [88, 28, 26, 12],
+    [30, 40, 18, 10],
+  ].forEach(([x, y, w, h]) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w / 2, h / 2, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = "#e8eef4";
+  ctx.fillRect(0, 0, 128, 6);
+  ctx.fillRect(0, 58, 128, 6);
+  return new window.THREE.CanvasTexture(c);
+}
+
+function makeBeacon(color) {
+  const T = window.THREE;
+  const g = new T.Group();
+  const cone = new T.Mesh(new T.ConeGeometry(0.028, 0.1, 10), new T.MeshBasicMaterial({ color }));
+  cone.position.y = 0.06;
+  const ring = new T.Mesh(new T.TorusGeometry(0.038, 0.007, 8, 18), new T.MeshBasicMaterial({ color }));
+  ring.rotation.x = Math.PI / 2;
+  g.add(cone, ring);
+  return g;
+}
+
+function placeBeacon(group, lat, lon) {
+  const p = latLonToVec(lat, lon, 1.02);
+  group.position.copy(p);
+  group.quaternion.setFromUnitVectors(new window.THREE.Vector3(0, 1, 0), p.clone().normalize());
+}
+
+const globe = { ready: false, userRot: { x: 0, y: 0 }, didOrbit: false };
+
+function loadMoonAlbedo(material) {
+  const loader = new window.THREE.TextureLoader();
+  loader.setCrossOrigin("anonymous");
+  loader.load(
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/moon_1024.jpg",
+    (tex) => {
+      if (window.THREE.SRGBColorSpace) tex.colorSpace = window.THREE.SRGBColorSpace;
+      material.map = tex;
+      material.needsUpdate = true;
+    },
+    undefined,
+    () => {}
+  );
+}
+
+function bindGlobeOrbit(host) {
+  const onDown = (event) => {
+    globe.dragging = true;
+    globe.didOrbit = true;
+    globe.lastX = event.clientX;
+    globe.lastY = event.clientY;
+    host.setPointerCapture?.(event.pointerId);
+  };
+  const onUp = () => {
+    globe.dragging = false;
+  };
+  const onMove = (event) => {
+    if (!globe.dragging) return;
+    globe.userRot.y += (event.clientX - globe.lastX) * 0.008;
+    globe.userRot.x = Math.max(-0.45, Math.min(0.55, globe.userRot.x + (event.clientY - globe.lastY) * 0.006));
+    globe.lastX = event.clientX;
+    globe.lastY = event.clientY;
+  };
+  host.addEventListener("pointerdown", onDown);
+  host.addEventListener("pointerup", onUp);
+  host.addEventListener("pointercancel", onUp);
+  host.addEventListener("pointermove", onMove);
+}
+
+function initGlobe() {
+  const host = document.querySelector("#moon-globe");
+  if (!host || !window.THREE) return;
+  try {
+    const T = window.THREE;
+    const w = host.clientWidth || 260;
+    const h = host.clientHeight || 260;
+    const scene = new T.Scene();
+    const camera = new T.PerspectiveCamera(32, w / h, 0.1, 40);
+    camera.position.set(0, -3.4, 2.6);
+    camera.lookAt(0, -1.05, 0);
+    const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h);
+    host.appendChild(renderer.domElement);
+
+    const moonMat = new T.MeshStandardMaterial({
+      map: craterTexture(),
+      roughness: 0.95,
+      metalness: 0.02,
+    });
+    const moon = new T.Mesh(new T.SphereGeometry(1, 64, 64), moonMat);
+    loadMoonAlbedo(moonMat);
+    scene.add(moon);
+
+    const polePts = [];
+    for (let i = 0; i <= 64; i += 1) {
+      const t = (i / 64) * Math.PI * 2;
+      polePts.push(new T.Vector3(Math.cos(t) * 0.14, -0.99, Math.sin(t) * 0.14));
+    }
+    moon.add(new T.Line(new T.BufferGeometry().setFromPoints(polePts), new T.LineBasicMaterial({ color: 0xe3b34a, transparent: true, opacity: 0.7 })));
+
+    const amb = new T.AmbientLight(0x8899aa, 0.32);
+    const sun = new T.DirectionalLight(0xffe6b0, 1.45);
+    const sunBall = new T.Mesh(new T.SphereGeometry(0.11, 16, 16), new T.MeshBasicMaterial({ color: 0xffe08a }));
+    scene.add(amb, sun, sunBall);
+    const earth = new T.Mesh(
+      new T.SphereGeometry(0.09, 20, 20),
+      new T.MeshBasicMaterial({ map: earthTexture() })
+    );
+    scene.add(earth);
+    const pinA = makeBeacon(0xe3b34a);
+    const pinB = makeBeacon(0x5ba8d8);
+    moon.add(pinA, pinB);
+
+    globe.ready = true;
+    globe.sun = sun;
+    globe.sunBall = sunBall;
+    globe.earth = earth;
+    globe.pinA = pinA;
+    globe.pinB = pinB;
+    globe.renderer = renderer;
+    globe.scene = scene;
+    globe.camera = camera;
+    globe.moon = moon;
+
+    bindGlobeOrbit(host);
+    window.addEventListener("resize", () => {
+      if (!globe.ready) return;
+      const nw = host.clientWidth || 260;
+      const nh = host.clientHeight || 260;
+      camera.aspect = nw / nh;
+      camera.updateProjectionMatrix();
+      renderer.setSize(nw, nh);
+    });
+
+    const spin = { t: 0 };
+    function tick() {
+      spin.t += 0.003;
+      const idle = !globe.didOrbit && !reducedMotion ? Math.sin(spin.t) * 0.08 : 0;
+      moon.rotation.y = globe.userRot.y + idle;
+      moon.rotation.x = globe.userRot.x;
+      renderer.render(scene, camera);
+      globe.raf = requestAnimationFrame(tick);
+    }
+    tick();
+  } catch (err) {
+    host.textContent = "Globe unavailable (Three.js). Polar plots still work.";
+    globe.ready = false;
+  }
+}
+
+function updateGlobe(keyA, keyB, hour) {
+  if (!globe.ready) return;
+  const a = sites[keyA];
+  const b = sites[keyB];
+  placeBeacon(globe.pinA, a.lat, a.lon);
+  placeBeacon(globe.pinB, b.lat, b.lon);
+  const az = (SIMULATION.sunAzimuthDeg(hour) * Math.PI) / 180;
+  globe.sun.position.set(Math.sin(az) * 4, -0.2, Math.cos(az) * 4);
+  globe.sunBall.position.copy(globe.sun.position);
+  const eaz = (SIMULATION.earthAzimuthDeg(hour) * Math.PI) / 180;
+  globe.earth.position.set(Math.sin(eaz) * 1.7, -0.15, Math.cos(eaz) * 1.7);
+  const cap = document.querySelector("#globe-caption");
+  if (cap) {
+    cap.textContent = `Illustrative south pole · A ${a.name} · B ${b.name} · Sun az ${SIMULATION.sunAzimuthDeg(hour).toFixed(0)}° · Three.js albedo · SYNTHETIC`;
+  }
+}
+
+function initStarfield() {
+  const canvas = document.querySelector("#starfield");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars.length = 0;
+    const n = Math.floor((canvas.width * canvas.height) / 9000);
+    for (let i = 0; i < n; i += 1) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2,
+        a: 0.25 + Math.random() * 0.6,
+        tw: Math.random() * Math.PI * 2,
+        sp: 0.004 + Math.random() * 0.01,
+      });
+    }
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      if (!reducedMotion) s.tw += s.sp;
+      const a = reducedMotion ? s.a : s.a * (0.55 + 0.45 * Math.sin(s.tw));
+      ctx.fillStyle = `rgba(230,230,240,${a})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  resize();
+  draw();
+  window.addEventListener("resize", resize);
+}
+
+const GLOSS = {
+  geometric:
+    "Geometric 0° is the local horizon of a smooth sphere. A target can sit above it and still hide behind real (or synthetic) terrain.",
+  terrain:
+    "The brown fill is the terrain horizon — the highest blocking elevation along each azimuth. Compare the Sun/Earth discs to this silhouette, not only to 0°.",
+  centre:
+    "Centre-ray means one line of sight through the disc centre. It is not finite-disc visibility, solar power, or a communications link.",
+  unknown:
+    "Unknown means required terrain is missing or masked on that azimuth. The contract forbids treating a gap as clear sky.",
+};
+
+function bindGlossary() {
+  const def = document.querySelector("#gloss-def");
+  document.querySelectorAll(".gloss-term").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".gloss-term").forEach((b) => b.classList.remove("is-on"));
+      btn.classList.add("is-on");
+      const term = btn.dataset.term;
+      if (def) def.textContent = GLOSS[term] || "";
+      document.body.dataset.highlight = term || "";
+      if (hasGsap && !reducedMotion) {
+        window.gsap.fromTo(def, { opacity: 0.4, y: 4 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" });
+      }
+    });
+  });
+}
+
 mountPlots();
+initStarfield();
+initGlobe();
+bindGlossary();
 bindAuthLinks();
 apiSignOut?.addEventListener("click", apiLogout);
 recordStubRun?.addEventListener("click", createStubRun);
@@ -775,7 +1102,16 @@ if (hasGsap && !reducedMotion) {
   intro
     .from(".sky-panel", { opacity: 0, y: 18, duration: 0.5, stagger: 0.1 })
     .from(".lesson-board", { opacity: 0, y: 10, duration: 0.4 }, "<0.15")
-    .from(".pipe li", { opacity: 0, y: 6, duration: 0.28, stagger: 0.04 }, "<");
+    .from(".pipe li", { opacity: 0, y: 6, duration: 0.28, stagger: 0.04 }, "<")
+    .from(".moon-globe-wrap", { opacity: 0, scale: 0.92, duration: 0.5 }, 0)
+    .from(".shape-key li", { opacity: 0, y: 6, duration: 0.3, stagger: 0.05 }, "<0.2");
+  window.gsap.to(".sky-sun-rays", {
+    rotation: 360,
+    svgOrigin: "0 0",
+    duration: 22,
+    repeat: -1,
+    ease: "none",
+  });
 }
 
 render();

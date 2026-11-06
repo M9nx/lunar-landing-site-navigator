@@ -948,6 +948,144 @@ body.theme-docs .site-footer {
 }
 .engine-hero-copy p { color: #cfcfd4; max-width: 58ch; margin: 0; }
 .engine-hero-meta { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+}
+body[data-page="prototype"] .site-header,
+body[data-page="prototype"] .site-banner,
+body[data-page="prototype"] main,
+body[data-page="prototype"] .site-footer { position: relative; z-index: 1; }
+
+.moon-globe-wrap { margin: 0; width: min(280px, 100%); }
+#moon-globe {
+  width: 100%;
+  height: 260px;
+  border: 1px solid #2e3340;
+  background: radial-gradient(circle at 40% 30%, #1a2233, #05060a 70%);
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 4px;
+  box-shadow: 0 0 48px rgba(90, 140, 200, 0.14);
+}
+#moon-globe:active { cursor: grabbing; }
+#moon-globe canvas { display: block; width: 100%; height: 100%; }
+#globe-caption {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #8d8d92;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+}
+.globe-legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #8d8d92;
+}
+.globe-legend li { display: flex; align-items: center; gap: 5px; }
+.globe-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.swatch-a { background: #e3b34a; }
+.swatch-b { background: #5ba8d8; }
+iconify-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+}
+.status-pill iconify-icon,
+.meter-head iconify-icon,
+.pipe iconify-icon,
+.gloss-term iconify-icon,
+.kicker iconify-icon,
+.legend iconify-icon {
+  font-size: 14px;
+  margin-right: 2px;
+}
+.shape-key {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  border: 1px solid #2e3340;
+  background: #10141c;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #9a9aa2;
+}
+.shape-key li { display: flex; align-items: center; gap: 6px; }
+.shape-key iconify-icon { font-size: 15px; color: var(--gold); }
+
+.glossary {
+  list-style: none;
+  margin: 14px 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #9a9aa2;
+  font-size: 13px;
+}
+.gloss-term {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: #16161c;
+  color: var(--white);
+  border: 1px solid #3a3a42;
+  padding: 4px 8px;
+  margin-right: 6px;
+  cursor: pointer;
+}
+.gloss-term.is-on,
+.gloss-term:focus-visible {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.gloss-def { margin: 0; color: var(--gold); font-size: 13px; max-width: 70ch; }
+
+body[data-highlight="geometric"] .sky-geo-dash,
+body[data-highlight="geometric"] .horizon-geo-line {
+  stroke: #fff;
+  stroke-width: 2.4;
+}
+body[data-highlight="terrain"] .sky-terrain {
+  stroke: #ffe08a;
+  stroke-width: 2.4;
+  fill: #5a4a32;
+}
+body[data-highlight="centre"] .sky-ray line {
+  stroke-width: 2;
+  opacity: 1;
+  stroke-dasharray: 0;
+}
+body[data-highlight="unknown"] .sky-gap {
+  stroke: #fff;
+  stroke-width: 2;
+}
 .engine-console {
   scroll-margin-top: calc(var(--banner-h) + var(--header-h) + 12px);
 }
@@ -1051,8 +1189,14 @@ body.theme-docs .site-footer {
 .sky-marker { will-change: transform; }
 .sky-sun-halo { fill: #e3b34a; opacity: .28; }
 .sky-sun-core { fill: #ffd978; }
+.sky-sun-rays { fill: #ffd27a; }
 .sky-earth-halo { fill: #5ba8d8; opacity: .3; }
-.sky-earth-core { fill: #9fd4f5; }
+.sky-earth-core { fill: #6eb6e4; }
+.sky-earth-eq,
+.sky-earth-mer { fill: none; stroke: #0d3554; stroke-width: 1.05; }
+.sky-earth-land { fill: #3d8f5a; opacity: .9; }
+.sky-lander { fill: #cfd3da; stroke: #8d939c; stroke-width: 1; stroke-linecap: round; }
+.sky-compass { fill: #e3b34a; }
 .sky-readout {
   margin: 6px 2px 0;
   font-size: 12px;
@@ -1269,6 +1413,7 @@ body.theme-docs .site-footer {
   .sky-stage,
   .hud-grid { grid-template-columns: 1fr; }
   .engine-hero-meta { align-items: flex-start; }
+  .moon-globe-wrap { width: min(320px, 100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

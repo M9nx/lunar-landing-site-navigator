@@ -11,21 +11,28 @@
   <link rel="stylesheet" href="../assets/css/site.css">
 </head>
 <body data-page="prototype" data-root="../">
+  <canvas id="starfield" class="starfield" aria-hidden="true"></canvas>
   <a class="skip-link" href="#main">Skip to main content</a>
   <div class="site-banner">Unofficial NASA Space Apps Challenge project · Not an official NASA website</div>
   <header id="site-header" class="site-header"></header>
   <main id="main" class="wrap engine-page">
     <section class="engine-hero">
       <div class="engine-hero-copy">
-        <p class="kicker">Surface sky · SYNTHETIC training console</p>
+        <p class="kicker"><iconify-icon icon="lucide:moon-star" aria-hidden="true"></iconify-icon> Surface sky · SYNTHETIC training console</p>
         <h1>Watch Sun and Earth against the terrain skyline.</h1>
         <p>Two sites, one UTC hour. Polar plots show azimuth (from north, clockwise) and elevation. Terrain fill is invented silhouette — <strong>not</strong> a real DEM. Status is always written as <strong>Clear</strong>, <strong>Blocked</strong>, or <strong>Unknown</strong>.</p>
       </div>
       <div class="engine-hero-meta">
         <span class="demo-chip">SYNTHETIC</span>
         <figure class="moon-globe-wrap">
-          <div id="moon-globe" aria-label="Illustrative south-polar Moon globe with two site pins"></div>
+          <div id="moon-globe" aria-label="Illustrative south-polar Moon globe with two site pins. Drag to orbit."></div>
           <figcaption id="globe-caption">South pole context · Three.js globe · not SPICE</figcaption>
+          <ul class="globe-legend" aria-label="Globe symbols">
+            <li><span class="globe-swatch swatch-a"></span> Site A pin</li>
+            <li><span class="globe-swatch swatch-b"></span> Site B pin</li>
+            <li><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Synthetic sun</li>
+            <li><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth marker</li>
+          </ul>
         </figure>
         <p class="page-hero-links">
           <a class="text-link" href="../">← Overview</a>
@@ -81,17 +88,24 @@
       </div>
 
       <ol class="pipe" id="pipe" aria-label="Calculation stages">
-        <li data-stage="terrain">1 Terrain</li>
-        <li data-stage="coverage">2 Coverage</li>
-        <li data-stage="horizon">3 Horizon</li>
-        <li data-stage="ephemeris">4 Sun/Earth</li>
-        <li data-stage="classify">5 Classify</li>
+        <li data-stage="terrain"><iconify-icon icon="lucide:mountain" aria-hidden="true"></iconify-icon> 1 Terrain</li>
+        <li data-stage="coverage"><iconify-icon icon="lucide:scan" aria-hidden="true"></iconify-icon> 2 Coverage</li>
+        <li data-stage="horizon"><iconify-icon icon="lucide:circle-dashed" aria-hidden="true"></iconify-icon> 3 Horizon</li>
+        <li data-stage="ephemeris"><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> 4 Sun/Earth</li>
+        <li data-stage="classify"><iconify-icon icon="lucide:check" aria-hidden="true"></iconify-icon> 5 Classify</li>
       </ol>
 
       <aside class="lesson-board" id="lesson-board" aria-live="polite">
         <p class="lesson-kicker">What just happened · SYNTHETIC</p>
         <p id="lesson-headline" class="lesson-headline">Scrub the hour to see the sky move.</p>
         <p id="lesson-body" class="lesson-body"></p>
+        <ul class="glossary" id="glossary">
+          <li><button type="button" class="gloss-term" data-term="geometric"><iconify-icon icon="lucide:circle-dashed" aria-hidden="true"></iconify-icon> Geometric 0°</button> smooth sphere, no craters</li>
+          <li><button type="button" class="gloss-term" data-term="terrain"><iconify-icon icon="lucide:mountain" aria-hidden="true"></iconify-icon> Terrain horizon</button> brown silhouette on the polar plot</li>
+          <li><button type="button" class="gloss-term" data-term="centre"><iconify-icon icon="lucide:satellite" aria-hidden="true"></iconify-icon> Centre-ray</button> one line of sight, not the full disc</li>
+          <li><button type="button" class="gloss-term" data-term="unknown"><iconify-icon icon="lucide:scan" aria-hidden="true"></iconify-icon> Unknown</button> missing terrain; never counted as clear</li>
+        </ul>
+        <p class="gloss-def" id="gloss-def">Tap a term to highlight it on the plots.</p>
       </aside>
 
       <div class="sky-stage" aria-live="polite">
@@ -123,6 +137,13 @@
         </article>
       </div>
 
+      <ul class="shape-key" aria-label="Polar plot symbols">
+        <li><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Sun = centre-ray, not the disc</li>
+        <li><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth = same contract, other azimuth</li>
+        <li><iconify-icon icon="lucide:rocket" aria-hidden="true"></iconify-icon> Lander = observer at zenith</li>
+        <li><iconify-icon icon="lucide:compass" aria-hidden="true"></iconify-icon> N/E/S/W = azimuth from north</li>
+      </ul>
+
       <section class="compare-hud" id="compare-strip" aria-label="Same time comparison of two sites"></section>
     </section>
 
@@ -133,8 +154,8 @@
           <h2>Sun and Earth vs geometric 0° and Site A terrain</h2>
         </div>
         <div class="legend" aria-label="Chart legend">
-          <span><i class="sun"></i>Sun</span>
-          <span><i class="earth"></i>Earth</span>
+          <span><iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon> Sun</span>
+          <span><iconify-icon icon="lucide:earth" aria-hidden="true"></iconify-icon> Earth</span>
           <span><i class="h-geo"></i>Geometric 0°</span>
           <span><i class="h-terrain-a"></i>Terrain A</span>
         </div>
@@ -212,6 +233,8 @@
   </main>
   <footer id="site-footer" class="site-footer"></footer>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
   <script src="../assets/js/navigator-config.js"></script>
   <script src="../assets/js/site.js"></script>
   <script src="config.js"></script>
