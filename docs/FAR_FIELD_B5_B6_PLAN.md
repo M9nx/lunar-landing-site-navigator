@@ -112,3 +112,19 @@ Expected benchmark artifacts:
 - `B6_product69_comparison.json` and a small CSV: reference pixel, definitions, source metadata, modeled/reference fractions, percentage-point differences, compatibility notes.
 
 The near-field B5 result remains reported as passed. Full B5, B6, and B7 remain open pending actual data audit, execution, and benchmark-owner review. Keep `SCIENCE_CALCULATIONS_READY=false`.
+
+## Sprint record — 2026-11-06 (local workspace, not merged to `main`)
+
+Repeatable commands and version stamps are in `docs/BENCHMARK_PLAN.md` § “Far-field B5 diagnostics and B7 API probe”.
+
+**Artifacts (ignored `research-results/sprint-b5-b7-2026-11-06/`):**
+
+| File | Role |
+|------|------|
+| `B5_terrain_sources.json` | Product 90 audit output (`compatibility_verdict: blocked`) |
+| `product90_ray_cov_80m_5k_100k.json` | 80 m native-grid radial continuity / coverage |
+| `product90_ray_cov_240m_100k_450k.json` | 240 m native-grid radial continuity / coverage |
+| `multiband_horizon/S04-P02_horizon_profile_farfield.csv` | 720×0.5° per-band + composite (nanmax) horizons |
+| `multiband_horizon/B5_farfield_validation_manifest.json` | Bands, seams, `full_B5_pass: false`, blockers |
+
+**Blockers (unchanged):** independent MOON_ME/DE421 control-point proof for stacked rasters; Product 90 vertical zero vs Site04 not established from metadata alone; B6 needs Product 69 files + PDS label review (`research/B6_PRODUCT69_BLOCKER.md`).
