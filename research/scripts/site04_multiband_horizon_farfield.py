@@ -10,9 +10,11 @@ Bands (s = along-ray distance in map plane, m): site04 (5,5000]; 80 m (5000,1e5]
 bands — **unvalidated** and can hide a missing band. Use ``horizon_composite_fail_closed_deg``
 (which is nan unless all three bands contributed ≥1 sample in that bin) for fail-closed
 completeness. Cross-check 80 m radial gaps with ``product90_ray_coverage_diagnostic.py``:
-a large ``gap_from_inner_ring_to_first_sample_m`` (e.g. bin 313 ≈3.36 km) means **no valid
-80 m pixels** in that azimuth corridor from the inner ring to the first sample — typically
-NoData / hole geometry in the DEM for that wedge, not an empty bin.
+a large ``gap_from_inner_ring_to_first_sample_m`` (e.g. bin 313 ≈3.36 km) means no pixel
+centre passed the current bin-assignment gates until that radius. The bin-centre corridor
+probe shows many queries mapping to valid pixel centres assigned to bin 312 before bin 313
+receives hits; this gap is **not proof of a NoData wedge**. It remains diagnostic and does
+not certify continuous coverage under an owner-reviewed rule.
 
 **Boundary horizon contrast (named seam_* in manifest):** for each azimuth, compare the
 max horizon from two **adjacent, non-overlapping** along-ray annuli (e.g. Site04
@@ -531,10 +533,12 @@ def main() -> int:
                 "bands have ≥1 sample in the bin (same annulus rules as per-band columns)."
             ),
             "scope_limit": (
-                "Per-bin sample counts do not prove continuous coverage along each ray within "
-                "the 80 m annulus from the inner ring (e.g. NoData wedge: first sample far "
-                "from 5 km). Cross-check product90_ray_coverage_diagnostic.py "
-                "radial_continuity_per_bin.gap_from_inner_ring_to_first_sample_m per bin."
+                "Per-bin sample counts and first-assigned radial gaps do not prove physical NoData "
+                "along the idealized centreline. Bin 313 corridor probes show many queries hitting "
+                "valid pixel centres assigned to bin 312 before target bin 313; interpret its "
+                "first-assigned gap as an assignment/posting diagnostic, not a confirmed masked "
+                "wedge. Cross-check product90_ray_coverage_diagnostic.py and "
+                "product90_ray_corridor_diagnostic.py; owner review of coverage criteria remains required."
             ),
             "bins_all_three_bands_sampled": int(np.sum(all_bands_sampled)),
             "bins_nanmax_finite": int(np.sum(np.isfinite(composite_nanmax))),

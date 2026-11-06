@@ -116,11 +116,29 @@ docker run --rm \
 
 **Measured highlights (diagnostic only):**
 
-- Product 90 native-grid coverage (720 bins, annulus per script): 80 m band 5000–100000 m — 720/720 bins with samples; global max of per-bin `largest_radial_gap_m` ≈ **3362 m** (largest inner gap before first sample on bin 313). 240 m band 100000–450000 m — 720/720 bins; global max largest gap ≈ **339 m** (native posting-limited).
+- Product 90 native-grid coverage (720 bins, annulus per script): 80 m band 5000–100000 m — 720/720 bins with samples; global max of per-bin `largest_radial_gap_m` ≈ **3362 m** (first sample assigned to bin 313 only near 8362 m). The centreline corridor probe finds valid pixel centres assigned to bin 312 before bin 313 receives hits; with 0.5° bins, 80 m posting, and pixel-centre snapping, this is not proof of a NoData stripe. Treat it as an assignment/posting diagnostic, not a continuity pass. 240 m band 100000–450000 m — 720/720 bins; global max largest gap ≈ **339 m** (native posting-limited).
 - Multiband horizon script runtime ~ **1 min** on this host; manifest `b5_verdict: blocked`, `science_calculations_ready: false`. The reported **seam_*** summaries are **adjacent annulus horizon contrasts** (max horizon in one non-overlapping range vs max in the next) — **boundary** contrast, not co-located overlap seam validation. Example degree stats where both finite: 5 km **boundary** median ≈ **0.39°**, p95 ≈ **1.39°**, max |diff| ≈ **1.98°**; 100 km **boundary** median ≈ **0.049°**, p95 ≈ **1.13°**, max |diff| ≈ **1.61°** — **no acceptance threshold** applied; B5 remains blocked.
 - `GET /v1/benchmark/status` — SQLite round-trip latency only; **not** a science result (see `backend/routers/calc.py`).
 
 **B6:** Product 69 raster not on local `data/` — see `research/B6_PRODUCT69_BLOCKER.md`.
+
+## Sprint evidence — 2026-11-06 (bin 313 corridor, overlap dZ, B7)
+
+**Branch:** `sprint/b5-b7-evidence` (not merged). **Artifacts:** ignored `research-results/sprint-b5-b7-evidence-2026-11-06/`.
+
+| Script / file | Purpose |
+|----------------|---------|
+| `research/scripts/product90_ray_corridor_diagnostic.py` | Fixed-step probe along **bin-centre** ray; per pixel-centre applies **`assign_ray_bins`** (same gates as coverage diagnostic). CSV + JSON list assigned bin, mask, raw float. |
+| `research/scripts/b5_overlap_elevation_diagnostic.py` | Co-located **(B − A)** elevation on native grid of B after **average** resample A→B; CRS op strings recorded (**Ballpark** on Site04→80 m pair in this run — diagnostic only). |
+| `research/scripts/collect_b7_api_benchmark.sh` | `curl` timing for `/health` and `/v1/benchmark/status` (client round-trip; see JSON `interpretation`). |
+
+**Bin 313 / 80 m:** Corridor JSON reports `first_valid_assigned_along_m` ≈ **8362.5 m** and inner gap ≈ **3362.5 m** (matches `product90_ray_cov_80m_5k_100k.json` radial continuity). Along the centre line, nearest pixel centres often **assign to bin 312** (`status: assigned_to_bin_312_not_313`) until distance grows — consistent with **discrete 0.5° bins and 80 m posting**, not a transform bug.
+
+**Co-located overlap (this workspace):** Site04→80 m window: **40000** common valid cells; median **(80 m − aggregated Site04) ≈ 0.18 m**; transform description includes **Ballpark**. 80 m→240 m: **6416089** cells; median residual **0 m**; max |residual| in top list **≈ 18 m** — still **not** seam acceptance; no threshold applied.
+
+**B7:** Example `b7_api_benchmark.json`: 25× `curl` to loopback — if `/v1/benchmark/status` returns **404**, deploy API at commit that includes that route (squash merge #20 on `main`); `sqlite_ping_ms` is authoritative when the route exists.
+
+**Owner checklist:** `research/B5_OWNER_REVIEW_CHECKLIST.md`.
 
 ## Reporting template
 
