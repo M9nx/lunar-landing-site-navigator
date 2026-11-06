@@ -1,6 +1,6 @@
 # Benchmark Plan and Partial Results
 
-This document defines evaluation methods and records the first Site04 run. Only B1–B4 have partial or reported results; B5–B7 remain open. The B4 entry below is a Hub-run result reported by the project owner; raw run files remain in the owner's persistent Jupyter home and are not committed here.
+This document defines evaluation methods and records Site04 runs. B1–B4 and the B5 near-field subcheck have reported results; far-field B5, B6, and B7 remain open. These Hub results are owner-reported; raw run files remain in the owner's persistent Jupyter home and are not committed here.
 
 ## Evaluation principles
 
@@ -49,11 +49,13 @@ This document defines evaluation methods and records the first Site04 run. Only 
 | B2: Projection | Inverse/forward projection round-trip residual approximately 7.5×10⁻⁹ m | Within proposed 1×10⁻³ m criterion for this point; extent-wide cases still pending |
 | B3: Frame and kernels | Five kernels loaded; `MOON_ME` resolved as frame ID 31001; cached kernel SHA-256 values matched notebook 03 manifest | Executed; manifest review pending |
 | B4: Local angle conversion | Hand-built ellipsoid-normal basis vs NAIF `azlcpo` for Sun/Earth at 00:00, 12:00, 23:00 UTC (six comparisons); maximum absolute azimuth and elevation errors each approximately 1×10⁻¹⁴°; manifest reports `B4_pass: true` | Pass against proposed 1×10⁻⁶° criterion for this point, these epochs, and these kernel inputs |
-| B5: Terrain horizon | No result yet | Open |
+| B5: Terrain horizon | Near-field-only comparison: 720/720 rays complete; per-bin Method A/B sample counts match; maximum absolute profile difference ≈3.6×10⁻¹⁵°; median difference 0°; manifest reports `near_field_pass: true` | Near-field subcheck passed as reported; far-field/Product 90 compatibility and full B5 remain open |
 | B6: Published illumination context | No result yet | Open |
 | B7: Runtime/API | No result yet | Open |
 
 **B5 data coverage:** The Site04 5 m raster is 16 × 16 km, which supports a near-field horizon check but does not cover a full far-field skyline. Barker et al. used nested terrain products: 5 m below 5 km, 80 m from 5–100 km, and 240 m at larger distances. Until compatible far-field terrain is acquired and aligned, any Site04 horizon result must be labeled near-field-only. Reference: https://ntrs.nasa.gov/citations/20205009660
+
+**B5 near-field run (owner-reported, 2026-11-06):** The Hub run reports 720 of 720 azimuth coverage probes complete, matching A/B sample counts per 0.5° bin (for example, 943/943 at 0°), maximum absolute horizon difference approximately 3.6×10⁻¹⁵°, median 0°, and `near_field_pass: true`. The hourly visibility CSV has 48 rows marked complete and reports centre-ray clearance over the 0–5 km near-field only. Method A streams pixel-centre samples into ray bins; Method B rescans those same pixel-centre samples per fixed ray. Their agreement checks the two code paths against one another, but does not independently validate the DEM horizon, shared frame mapping, or far-field visibility. Product 90 remains unmounted/unverified, so `full_B5_pass` remains false. The executed CSV/JSON artifacts are not committed.
 
 Notebook 03 reports geometric centre angles at 2025-01-01T00:00Z of approximately Sun azimuth 318.6° / elevation +1.68° and Earth azimuth 152° / elevation −6.5°. They are not terrain-cleared. The B4 run reports the Site04 PCK ellipsoid radii [1737.4, 1737.4, 1737.4] km and approximately 0° between radial-sphere up and ellipsoid up at S04-P02.
 
@@ -63,8 +65,12 @@ Artifacts in the owner's persistent Hub home:
 - `~/research-results/site04-spice-baseline/kernel_and_run_manifest.json`
 - `~/research-results/site04-spice-baseline/S04-P02_azlcpo_crosscheck.csv`
 - `~/research-results/site04-spice-baseline/B4_validation_manifest.json`
+- `~/research-results/site04-spice-baseline/B5_terrain_sources.json`
+- `~/research-results/site04-spice-baseline/S04-P02_horizon_profile.csv`
+- `~/research-results/site04-spice-baseline/S04-P02_hourly_terrain_visibility.csv`
+- `~/research-results/site04-spice-baseline/B5_validation_manifest.json`
 
-B4 validates the local angle conversion against NAIF's routine using the same DE421 ephemeris and kernels. It is not an independent ephemeris validation and does not establish terrain visibility. Keep `SCIENCE_CALCULATIONS_READY=false` while B5–B7 and review remain open.
+B4 validates the local angle conversion against NAIF's routine using the same DE421 ephemeris and kernels. It is not an independent ephemeris validation. The reported B5 near-field pass is limited to the 0–5 km sample domain and method consistency; it does not close far-field B5. Keep `SCIENCE_CALCULATIONS_READY=false` while far-field B5, B6–B7, and benchmark-owner review remain open.
 
 ## Reporting template
 
