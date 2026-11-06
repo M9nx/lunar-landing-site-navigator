@@ -6,7 +6,13 @@ ray assignment in **that raster's** map plane; ``los_elevation_deg`` uses the sh
 east/north/up (from lon/lat at the surface).
 
 Bands (s = along-ray distance in map plane, m): site04 (5,5000]; 80 m (5000,1e5]; 240 m
-(1e5, min(outer_cap, extent_to_corner)]. Composite = nanmax across bands — not validated.
+(1e5, min(outer_cap, extent_to_corner)]. ``horizon_composite_nanmax_deg`` is nanmax across
+bands — **unvalidated** and can hide a missing band. Use ``horizon_composite_fail_closed_deg``
+(which is nan unless all three bands contributed ≥1 sample in that bin) for fail-closed
+completeness. Cross-check 80 m radial gaps with ``product90_ray_coverage_diagnostic.py``:
+a large ``gap_from_inner_ring_to_first_sample_m`` (e.g. bin 313 ≈3.36 km) means **no valid
+80 m pixels** in that azimuth corridor from the inner ring to the first sample — typically
+NoData / hole geometry in the DEM for that wedge, not an empty bin.
 
 Seam annuli (deg diffs where both finite): Site04 (4500,5000] vs 80 m (5000,5500]; 80 m
 (95000,1e5] vs 240 m (1e5,110000].
@@ -438,7 +444,10 @@ def main() -> int:
         lon0, lat0, z0, p240, min_along=100_000.0, max_along=110_000.0, exclusive_min=True
     )
 
-    composite = np.nanmax(np.stack([h5, h80, h240], axis=0), axis=0)
+    composite_nanmax = np.nanmax(np.stack([h5, h80, h240], axis=0), axis=0)
+    # Fail-closed: require at least one valid horizon sample in each band's annulus for this bin.
+    all_bands_sampled = (c5 > 0) & (c80 > 0) & (c240 > 0)
+    composite_fail_closed = np.where(all_bands_sampled, composite_nanmax, np.nan)
 
     seams = [
         seam_stats("seam_5km_site04_4500_5000_vs_80m_5000_5500", h5_seam_a, h80_seam_b),
@@ -459,6 +468,8 @@ def main() -> int:
                 "horizon_p90_80m_deg",
                 "horizon_p90_240m_deg",
                 "horizon_composite_nanmax_deg",
+                "horizon_composite_fail_closed_deg",
+                "composite_all_bands_sampled",
                 "coverage_site04_samples",
                 "coverage_80m_samples",
                 "coverage_240m_samples",
@@ -471,7 +482,10 @@ def main() -> int:
                     "" if not np.isfinite(h5[i]) else f"{float(h5[i]):.8f}",
                     "" if not np.isfinite(h80[i]) else f"{float(h80[i]):.8f}",
                     "" if not np.isfinite(h240[i]) else f"{float(h240[i]):.8f}",
-                    "" if not np.isfinite(composite[i]) else f"{float(composite[i]):.8f}",
+                    "" if not np.isfinite(composite_nanmax[i]) else f"{float(composite_nanmax[i]):.8f}",
+                    "" if not np.isfinite(composite_fail_closed[i])
+                    else f"{float(composite_fail_closed[i]):.8f}",
+                    "1" if all_bands_sampled[i] else "0",
                     int(c5[i]),
                     int(c80[i]),
                     int(c240[i]),
@@ -494,6 +508,21 @@ def main() -> int:
             "p90_240m_100000_to_cap": m240,
         },
         "seam_annulus_summaries_deg": seams,
+        "composite_horizon": {
+            "description": (
+                "nanmax across bands is diagnostic only. fail_closed is nan unless all three "
+                "bands have ≥1 sample in the bin (same annulus rules as per-band columns)."
+            ),
+            "scope_limit": (
+                "Per-bin sample counts do not prove continuous coverage along each ray within "
+                "the 80 m annulus from the inner ring (e.g. NoData wedge: first sample far "
+                "from 5 km). Cross-check product90_ray_coverage_diagnostic.py "
+                "radial_continuity_per_bin.gap_from_inner_ring_to_first_sample_m per bin."
+            ),
+            "bins_all_three_bands_sampled": int(np.sum(all_bands_sampled)),
+            "bins_nanmax_finite": int(np.sum(np.isfinite(composite_nanmax))),
+            "bins_fail_closed_finite": int(np.sum(np.isfinite(composite_fail_closed))),
+        },
         "blockers": {
             "frame_tie": (
                 "Independent MOON_ME/DE421 raster tie not established; pyproj uses Ballpark "
@@ -520,7 +549,8 @@ def main() -> int:
         "finite_bins: site04=", int(np.sum(np.isfinite(h5))),
         "80m=", int(np.sum(np.isfinite(h80))),
         "240m=", int(np.sum(np.isfinite(h240))),
-        "composite=", int(np.sum(np.isfinite(composite))),
+        "composite_nanmax=", int(np.sum(np.isfinite(composite_nanmax))),
+        "composite_fail_closed(all_bands)=", int(np.sum(np.isfinite(composite_fail_closed))),
     )
     return 0
 

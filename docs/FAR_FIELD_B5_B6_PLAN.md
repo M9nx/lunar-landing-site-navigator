@@ -128,3 +128,7 @@ Repeatable commands and version stamps are in `docs/BENCHMARK_PLAN.md` § “Far
 | `multiband_horizon/B5_farfield_validation_manifest.json` | Bands, seams, `full_B5_pass: false`, blockers |
 
 **Blockers (unchanged):** independent MOON_ME/DE421 control-point proof for stacked rasters; Product 90 vertical zero vs Site04 not established from metadata alone; B6 needs Product 69 files + PDS label review (`research/B6_PRODUCT69_BLOCKER.md`).
+
+**Interpretation note (80 m bin 313):** In `product90_ray_cov_80m_5k_100k.json`, bin 313 has `gap_from_inner_ring_to_first_sample_m` ≈ **3362 m** with `first_valid_radius_m` ≈ **8362 m** — there are **1146** valid samples along the ray, so the gap is a **near-inner-ring hole** in valid pixels for that azimuth wedge (NoData / missing strip in the raster or masked values), not an empty bin. That direction is **not** continuously covered from the 5 km ring boundary to the first sample.
+
+**Composite horizons:** `research/scripts/site04_multiband_horizon_farfield.py` writes both `horizon_composite_nanmax_deg` (can hide missing-band wedges) and `horizon_composite_fail_closed_deg` (nan unless all three bands have ≥1 sample in the bin). The manifest `scope_limit` reminds that **per-bin counts still do not prove** continuous 80 m radial coverage — use the coverage diagnostic’s inner-gap fields for that.
