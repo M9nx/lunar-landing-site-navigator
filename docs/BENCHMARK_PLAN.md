@@ -53,6 +53,8 @@ This document defines evaluation methods and records the first Site04 run. Only 
 | B6: Published illumination context | No result yet | Open |
 | B7: Runtime/API | No result yet | Open |
 
+**B5 data coverage:** The Site04 5 m raster is 16 × 16 km, which supports a near-field horizon check but does not cover a full far-field skyline. Barker et al. used nested terrain products: 5 m below 5 km, 80 m from 5–100 km, and 240 m at larger distances. Until compatible far-field terrain is acquired and aligned, any Site04 horizon result must be labeled near-field-only. Reference: https://ntrs.nasa.gov/citations/20205009660
+
 Notebook 03 reports geometric centre angles at 2025-01-01T00:00Z of approximately Sun azimuth 318.6° / elevation +1.68° and Earth azimuth 152° / elevation −6.5°. They are not terrain-cleared. The B4 run reports the Site04 PCK ellipsoid radii [1737.4, 1737.4, 1737.4] km and approximately 0° between radial-sphere up and ellipsoid up at S04-P02.
 
 Artifacts in the owner's persistent Hub home:
