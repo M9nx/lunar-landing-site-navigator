@@ -1,7 +1,7 @@
 # Lunar Geometry: Frame Mapping and Validation Plan
 
 **Research date:** 2026-11-06  
-**Status:** Source-level frame mapping established; Site04 geometric baseline and B4 pass reported; B1–B3 sign-off and B5–B7 remain pending.  
+**Status:** Source-level frame mapping established; Site04 geometric baseline, B4 pass, and near-field B5 pass reported; B1–B3 sign-off, far-field B5, and B6–B7 remain pending.  
 **Scope:** Site04 (Shackleton) LOLA DEM, lunar frame handling, and a reproducible first benchmark for Sun/Earth direction and local visibility.
 
 ## Executive decision
@@ -30,6 +30,10 @@ The Site04 notebook run reports a sub-micrometre projection round trip and B4 ag
 5. PGDA notes that about 90% of the polar 5 m pixels are interpolated, and defines the total Z uncertainty product as RMS error. Do not describe DEM height RMS as a landing probability or a confidence interval. The audit’s selected LDEC>0 example is FID 2 at projected X=−2652.5 m, Y=−6082.5 m; Z=1736.902 m, total Z RMS=0.169 m, slope=3.29°, LDEC=2. It is a reproducible sample point, not a named or endorsed landing site.  
    Source: https://pgda.gsfc.nasa.gov/products/78  
    Local evidence: `research/notebooks/02_site04_registration_and_point_selection.ipynb`.
+
+
+
+The Product 90 source audit, far-field horizon bands, seam checks, and B6 reference plan are documented in [FAR_FIELD_B5_B6_PLAN.md](FAR_FIELD_B5_B6_PLAN.md).
 
 ## Coordinate and frame pipeline to implement
 

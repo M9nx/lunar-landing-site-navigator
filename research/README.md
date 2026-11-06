@@ -33,6 +33,6 @@ Notebook 03 has been run in JupyterHub for S04-P02 and produced the 24-hour geom
 
 Notebook 05 has a user-reported near-field result for S04-P02: 720/720 coverage probes complete, matching A/B per-bin pixel-centre sample counts, maximum profile difference about 3.6e-15 degrees, median 0 degrees, and `near_field_pass: true`. Method A streams the pixel-centre samples; Method B rescans the same samples per ray, so agreement checks implementation consistency and is not independent validation of the terrain model. Product 90/far-field compatibility remains unverified; raw B5 artifacts remain in the owner's persistent Hub home and are not committed. The manifest keeps `full_B5_pass: false`.
 
-See `docs/BENCHMARK_PLAN.md` for the reported run details and open far-field B5/B6–B7 gates. Neither notebook recommends landing sites.
+See `docs/BENCHMARK_PLAN.md` for the reported run details and open far-field B5/B6–B7 gates. The Product 90 compatibility, far-field horizon, and B6 comparison procedure is in [FAR_FIELD_B5_B6_PLAN.md](../docs/FAR_FIELD_B5_B6_PLAN.md). Neither notebook recommends landing sites.
 
 See [FRAME_GEOMETRY_VALIDATION.md](../docs/FRAME_GEOMETRY_VALIDATION.md) for the coordinate pipeline, proposed gates, and team work batch.
