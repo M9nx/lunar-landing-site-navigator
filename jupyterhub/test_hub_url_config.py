@@ -41,6 +41,18 @@ class HubUrlConfigTests(unittest.TestCase):
         ):
             validate_hub_url_config()
 
+    def test_rejects_public_http_hub_url(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "HUB_PUBLIC_URL": "http://hub.m9nx.me",
+                "HUB_OAUTH_CALLBACK_URL": "",
+            },
+            clear=True,
+        ):
+            with self.assertRaises(SystemExit):
+                validate_hub_url_config()
+
 
 if __name__ == "__main__":
     unittest.main()

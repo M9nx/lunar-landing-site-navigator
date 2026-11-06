@@ -43,6 +43,24 @@ def validate_hub_url_config() -> None:
     callback_host = _hostname(callback)
     public_loopback = _is_loopback_host(public_host)
     callback_loopback = _is_loopback_host(callback_host)
+    public_scheme = (urlparse(public).scheme or "").lower()
+    callback_scheme = (urlparse(callback).scheme or "").lower()
+
+    if not public_loopback and public_scheme == "http":
+        print(
+            "hub_config: refusing to start — public HUB_PUBLIC_URL must use HTTPS, not http.\n"
+            f"  HUB_PUBLIC_URL={public}\n"
+            "  Use https:// for staging/production (TLS terminates at your proxy or tunnel).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not public_loopback and callback_scheme == "http":
+        print(
+            "hub_config: refusing to start — OAuth callback must use HTTPS for a public Hub host.\n"
+            f"  HUB_OAUTH_CALLBACK_URL={callback}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if not public_loopback and callback_loopback:
         print(

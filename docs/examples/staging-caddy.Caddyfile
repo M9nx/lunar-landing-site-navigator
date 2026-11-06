@@ -1,0 +1,13 @@
+# Example Caddy config on the Docker host (adjust email and paths).
+# Install Caddy, place this at /etc/caddy/Caddyfile, reload.
+# Requires DNS A/AAAA or CNAME for api.m9nx.me and hub.m9nx.me → this host.
+
+api.m9nx.me {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+}
+
+hub.m9nx.me {
+	encode gzip
+	reverse_proxy 127.0.0.1:8001
+}
