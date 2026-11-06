@@ -205,10 +205,10 @@ def main() -> int:
             "site04": [a.direction for a in site04_crs.axis_info] if site04_crs else None,
             "product90": [a.direction for a in product_crs.axis_info] if product_crs else None,
         }
+        shared_samples: list[dict[str, Any]] = []
         if not site04_crs or not product_crs:
             point = {"error": "CRS missing; cannot transform fixed point."}
             roundtrip = None
-            shared_samples: list[dict[str, Any]] = []
         else:
             forward = Transformer.from_crs(site04_crs, product_crs, always_xy=True)
             inverse = Transformer.from_crs(product_crs, site04_crs, always_xy=True)
