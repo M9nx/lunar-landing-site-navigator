@@ -23,6 +23,10 @@
       </div>
       <div class="engine-hero-meta">
         <span class="demo-chip">SYNTHETIC</span>
+        <figure class="moon-globe-wrap">
+          <div id="moon-globe" aria-label="Illustrative south-polar Moon globe with two site pins"></div>
+          <figcaption id="globe-caption">South pole context · Three.js globe · not SPICE</figcaption>
+        </figure>
         <p class="page-hero-links">
           <a class="text-link" href="../">← Overview</a>
           <a class="text-link" href="../documents.html?doc=DEMO_DESIGN_SKETCH.md">Design sketch</a>
@@ -76,6 +80,20 @@
         <p id="controls-help" class="controls-help">Keyboard: Tab into controls, arrows on the slider, Space on Play. Malapert 02:00 = Unknown sector; 06:00 = ridge block. Values stay SYNTHETIC.</p>
       </div>
 
+      <ol class="pipe" id="pipe" aria-label="Calculation stages">
+        <li data-stage="terrain">1 Terrain</li>
+        <li data-stage="coverage">2 Coverage</li>
+        <li data-stage="horizon">3 Horizon</li>
+        <li data-stage="ephemeris">4 Sun/Earth</li>
+        <li data-stage="classify">5 Classify</li>
+      </ol>
+
+      <aside class="lesson-board" id="lesson-board" aria-live="polite">
+        <p class="lesson-kicker">What just happened · SYNTHETIC</p>
+        <p id="lesson-headline" class="lesson-headline">Scrub the hour to see the sky move.</p>
+        <p id="lesson-body" class="lesson-body"></p>
+      </aside>
+
       <div class="sky-stage" aria-live="polite">
         <article class="sky-panel" data-slot="A">
           <header class="sky-panel-head">
@@ -86,6 +104,8 @@
             <div class="sky-pills" id="pills-a"></div>
           </header>
           <div class="sky-plot" id="plot-a"></div>
+          <div class="edu-meters" id="meters-a"></div>
+          <p class="sky-why" id="why-a"></p>
           <p class="sky-readout" id="readout-a"></p>
         </article>
         <article class="sky-panel" data-slot="B">
@@ -97,6 +117,8 @@
             <div class="sky-pills" id="pills-b"></div>
           </header>
           <div class="sky-plot" id="plot-b"></div>
+          <div class="edu-meters" id="meters-b"></div>
+          <p class="sky-why" id="why-b"></p>
           <p class="sky-readout" id="readout-b"></p>
         </article>
       </div>

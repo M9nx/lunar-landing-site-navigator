@@ -230,19 +230,27 @@ function skySvgMarkup(prefix) {
       <path id="${prefix}-terrain" class="sky-terrain"/>
       <g id="${prefix}-gaps"></g>
       <circle class="sky-geo-dash" cx="${POLAR.cx}" cy="${POLAR.cy}" r="${polarRadius(0).toFixed(1)}"/>
+      <text class="sky-annote" x="${POLAR.cx + polarRadius(0) + 4}" y="${POLAR.cy - 4}">0° geometric</text>
+      <text class="sky-annote sky-annote-dim" x="${POLAR.cx + 8}" y="${POLAR.cy - polarRadius(15) + 4}">+15°</text>
       ${dirs}
       <g id="${prefix}-ray-sun" class="sky-ray"></g>
       <g id="${prefix}-ray-earth" class="sky-ray earth-ray"></g>
       <g id="${prefix}-sun" class="sky-marker sky-sun" filter="url(#${prefix}-glow)">
+        <circle r="18" class="sky-pulse"/>
         <circle r="14" class="sky-sun-halo"/>
         <circle r="7" class="sky-sun-core"/>
+        <text class="marker-name" y="-22" text-anchor="middle">Sun</text>
+        <text class="marker-el" id="${prefix}-sun-el" y="28" text-anchor="middle"></text>
       </g>
       <g id="${prefix}-earth" class="sky-marker sky-earth" filter="url(#${prefix}-glow)">
+        <circle r="16" class="sky-pulse earth-pulse"/>
         <circle r="12" class="sky-earth-halo"/>
         <circle r="6" class="sky-earth-core"/>
+        <text class="marker-name earth-name" y="-20" text-anchor="middle">Earth</text>
+        <text class="marker-el" id="${prefix}-earth-el" y="26" text-anchor="middle"></text>
       </g>
       <text class="sky-zenith" x="${POLAR.cx}" y="${POLAR.cy - 8}" text-anchor="middle">zenith</text>
-      <text class="sky-caption" x="${POLAR.cx}" y="454" text-anchor="middle">Azimuth from north · elevation from geometric 0°</text>
+      <text class="sky-caption" x="${POLAR.cx}" y="454" text-anchor="middle">Inward = higher elevation · brown = terrain · hatch = no data</text>
     </svg>`;
 }
 
@@ -337,6 +345,87 @@ function pillsHtml(snap) {
     <span class="status-pill status-${snap.earthSt.code}" title="${snap.earthSt.detail}">Earth ${snap.earthSt.short}</span>`;
 }
 
+function marginDeg(el, horizon, known) {
+  if (!known || horizon === null || Number.isNaN(horizon)) return null;
+  return el - horizon;
+}
+
+function whyBody(name, el, az, h, st) {
+  if (st.code === "unknown") {
+    return `<strong>${name}: Unknown.</strong> Azimuth ${az.toFixed(0)}° has no valid terrain on this toy map (red hatch). Missing coverage is never treated as clear.`;
+  }
+  const m = marginDeg(el, h.elevationDeg, h.terrainKnown);
+  const terr = h.elevationDeg;
+  if (st.code === "clear") {
+    return `<strong>${name}: Clear.</strong> Elevation ${el.toFixed(1)}° is ${m.toFixed(1)}° above the terrain horizon (${terr.toFixed(1)}°) on azimuth ${az.toFixed(0)}°. That is centre-ray only — not a full disc, power, or radio link.`;
+  }
+  const vsGeo = el > 0 ? "even though it is above geometric 0°" : "and it is also at or below geometric 0°";
+  return `<strong>${name}: Blocked.</strong> Elevation ${el.toFixed(1)}° sits ${Math.abs(m).toFixed(1)}° below the terrain silhouette (${terr.toFixed(1)}°) ${vsGeo}.`;
+}
+
+function meterHtml(label, el, h, st) {
+  const min = -12;
+  const max = 15;
+  const pct = (v) => `${(((v - min) / (max - min)) * 100).toFixed(1)}%`;
+  const known = h.terrainKnown && h.elevationDeg !== null;
+  const terrPct = known ? pct(h.elevationDeg) : null;
+  const elPct = pct(el);
+  const m = marginDeg(el, h.elevationDeg, h.terrainKnown);
+  const marginTxt = m === null ? "margin n/a (unknown ray)" : `margin ${m >= 0 ? "+" : ""}${m.toFixed(1)}° vs terrain`;
+  return `
+    <div class="meter" data-state="${st.code}">
+      <div class="meter-head"><span>${label}</span><span>${el.toFixed(1)}° · ${st.short}</span></div>
+      <div class="meter-track" aria-hidden="true">
+        <span class="meter-geo" style="left:${pct(0)}"></span>
+        ${terrPct !== null ? `<span class="meter-terr" style="left:${terrPct}"></span>` : ""}
+        <span class="meter-body meter-${label.toLowerCase()}" style="left:${elPct}"></span>
+      </div>
+      <p class="meter-note">${marginTxt}. Tick = geometric 0°; gold tick = terrain.</p>
+    </div>`;
+}
+
+function setPipeline(snapA, snapB) {
+  const unknown = [snapA.sunSt, snapA.earthSt, snapB.sunSt, snapB.earthSt].some((s) => s.code === "unknown");
+  const blocked = [snapA.sunSt, snapA.earthSt, snapB.sunSt, snapB.earthSt].some((s) => s.code === "blocked");
+  const live = unknown ? "coverage" : blocked ? "horizon" : "classify";
+  document.querySelectorAll("#pipe [data-stage]").forEach((el) => {
+    el.classList.toggle("is-live", el.dataset.stage === live || el.dataset.stage === "ephemeris" || el.dataset.stage === "classify");
+    el.classList.toggle("is-focus", el.dataset.stage === live);
+  });
+}
+
+function lessonCopy(hour, snapA, snapB) {
+  const hh = `${String(hour).padStart(2, "0")}:00`;
+  const bits = [];
+  if (snapA.sunSt.code === "unknown" || snapB.sunSt.code === "unknown") {
+    bits.push("A hatched wedge means the engine lacks terrain on that azimuth, so the Sun is Unknown — it does not default to clear sky.");
+  } else if (snapA.sunSt.code === "blocked" || snapB.sunSt.code === "blocked") {
+    bits.push("Brown fill is the synthetic terrain skyline. If the Sun sits in or behind that fill, the centre ray is Blocked even if elevation looks small and positive.");
+  } else {
+    bits.push("Both Suns are Clear: each centre ray is above the known terrain horizon at this hour.");
+  }
+  const aSunM = marginDeg(snapA.sunEl, snapA.sunH.elevationDeg, snapA.sunH.terrainKnown);
+  const bSunM = marginDeg(snapB.sunEl, snapB.sunH.elevationDeg, snapB.sunH.terrainKnown);
+  const aTxt = aSunM === null ? "n/a" : `${aSunM >= 0 ? "+" : ""}${aSunM.toFixed(1)}°`;
+  const bTxt = bSunM === null ? "n/a" : `${bSunM >= 0 ? "+" : ""}${bSunM.toFixed(1)}°`;
+  return {
+    headline: `${hh} UTC · Sun margin A ${aTxt} vs B ${bTxt} (synthetic).`,
+    body: `${bits[0]} Earth uses the same contract on a different azimuth. Geometric 0° (dashed ring) is a smooth sphere — not the crater rim.`,
+  };
+}
+
+let lastStatusKey = "";
+function pulseStatus(key) {
+  if (key === lastStatusKey) return;
+  lastStatusKey = key;
+  if (!hasGsap || reducedMotion) return;
+  window.gsap.fromTo(
+    ".status-pill, .lesson-board",
+    { scale: 0.97, opacity: 0.7 },
+    { scale: 1, opacity: 1, duration: 0.35, ease: "power2.out", stagger: 0.04, overwrite: "auto" }
+  );
+}
+
 function updatePlot(prefix, siteKey, hour) {
   const snap = snapshot(siteKey, hour);
   const terrain = document.querySelector(`#${prefix}-terrain`);
@@ -346,6 +435,10 @@ function updatePlot(prefix, siteKey, hour) {
   const earthPt = polarXY(snap.earthAz, snap.earthEl);
   moveMarker(document.querySelector(`#${prefix}-sun`), sunPt.x, sunPt.y);
   moveMarker(document.querySelector(`#${prefix}-earth`), earthPt.x, earthPt.y);
+  const sunElLab = document.querySelector(`#${prefix}-sun-el`);
+  const earthElLab = document.querySelector(`#${prefix}-earth-el`);
+  if (sunElLab) sunElLab.textContent = `${snap.sunEl.toFixed(1)}°`;
+  if (earthElLab) earthElLab.textContent = `${snap.earthEl.toFixed(1)}°`;
   setRay(prefix, "sun", snap.sunAz, snap.sunEl);
   setRay(prefix, "earth", snap.earthAz, snap.earthEl);
   return snap;
@@ -366,10 +459,32 @@ function render() {
   document.querySelector("#name-b").textContent = snapB.site.name;
   document.querySelector("#pills-a").innerHTML = pillsHtml(snapA);
   document.querySelector("#pills-b").innerHTML = pillsHtml(snapB);
+  document.querySelector("#meters-a").innerHTML =
+    meterHtml("Sun", snapA.sunEl, snapA.sunH, snapA.sunSt) +
+    meterHtml("Earth", snapA.earthEl, snapA.earthH, snapA.earthSt);
+  document.querySelector("#meters-b").innerHTML =
+    meterHtml("Sun", snapB.sunEl, snapB.sunH, snapB.sunSt) +
+    meterHtml("Earth", snapB.earthEl, snapB.earthH, snapB.earthSt);
+  document.querySelector("#why-a").innerHTML =
+    whyBody("Sun", snapA.sunEl, snapA.sunAz, snapA.sunH, snapA.sunSt) +
+    " " +
+    whyBody("Earth", snapA.earthEl, snapA.earthAz, snapA.earthH, snapA.earthSt);
+  document.querySelector("#why-b").innerHTML =
+    whyBody("Sun", snapB.sunEl, snapB.sunAz, snapB.sunH, snapB.sunSt) +
+    " " +
+    whyBody("Earth", snapB.earthEl, snapB.earthAz, snapB.earthH, snapB.earthSt);
   document.querySelector("#readout-a").textContent =
     `${snapA.site.id} · Sun az ${snapA.sunAz.toFixed(0)}° el ${snapA.sunEl.toFixed(1)}° · Earth az ${snapA.earthAz.toFixed(0)}° el ${snapA.earthEl.toFixed(1)}° · ${date} ${String(hour).padStart(2, "0")}:00 UTC · SYNTHETIC`;
   document.querySelector("#readout-b").textContent =
     `${snapB.site.id} · Sun az ${snapB.sunAz.toFixed(0)}° el ${snapB.sunEl.toFixed(1)}° · Earth az ${snapB.earthAz.toFixed(0)}° el ${snapB.earthEl.toFixed(1)}° · centre-ray only`;
+
+  const lesson = lessonCopy(hour, snapA, snapB);
+  const headline = document.querySelector("#lesson-headline");
+  const body = document.querySelector("#lesson-body");
+  if (headline) headline.textContent = lesson.headline;
+  if (body) body.textContent = lesson.body;
+  setPipeline(snapA, snapB);
+  pulseStatus(`${snapA.sunSt.code}${snapA.earthSt.code}${snapB.sunSt.code}${snapB.earthSt.code}|${keyA}|${keyB}`);
 
   if (compareStrip) {
     compareStrip.innerHTML = `
@@ -656,7 +771,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 if (hasGsap && !reducedMotion) {
-  window.gsap.from(".sky-panel", { opacity: 0, y: 18, duration: 0.55, stagger: 0.08, ease: "power2.out" });
+  const intro = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+  intro
+    .from(".sky-panel", { opacity: 0, y: 18, duration: 0.5, stagger: 0.1 })
+    .from(".lesson-board", { opacity: 0, y: 10, duration: 0.4 }, "<0.15")
+    .from(".pipe li", { opacity: 0, y: 6, duration: 0.28, stagger: 0.04 }, "<");
 }
 
 render();

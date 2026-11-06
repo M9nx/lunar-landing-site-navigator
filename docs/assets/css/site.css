@@ -1082,6 +1082,118 @@ body.theme-docs .site-footer {
 .hud-detail { color: #b5b5bb; font-size: 13px; margin: 10px 0 0; }
 .engine-series { margin-top: 20px; }
 
+.pipe {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pipe li {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border: 1px solid #333;
+  color: #7a7a80;
+}
+.pipe li.is-live { color: #d8d8de; border-color: #4a4a52; }
+.pipe li.is-focus {
+  color: var(--white);
+  border-color: var(--nasa-red);
+  background: #2a1010;
+}
+
+.lesson-board {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid #3a3340;
+  background: linear-gradient(90deg, #1a1420, #101014 40%);
+}
+.lesson-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 8px;
+}
+.lesson-headline {
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+  color: var(--white);
+}
+.lesson-body { margin: 0; color: #c8c8ce; max-width: 80ch; line-height: 1.55; }
+
+.edu-meters { display: grid; gap: 10px; margin-top: 10px; }
+.meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--label);
+  margin-bottom: 6px;
+}
+.meter-track {
+  position: relative;
+  height: 10px;
+  background: #1c1c22;
+  border: 1px solid #333;
+  overflow: hidden;
+}
+.meter-geo,
+.meter-terr,
+.meter-body {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+.meter-geo { background: #8d8d92; }
+.meter-terr { background: var(--gold); width: 4px; }
+.meter-body.meter-sun { background: var(--sun); width: 6px; }
+.meter-body.meter-earth { background: var(--earth); width: 6px; }
+.meter-note { margin: 6px 0 0; font-size: 12px; color: #8d8d92; }
+.meter[data-state="unknown"] .meter-track { background: repeating-linear-gradient(45deg, #2a1212, #2a1212 4px, #1c1c22 4px, #1c1c22 8px); }
+
+.sky-why {
+  margin: 10px 2px 0;
+  font-size: 13px;
+  color: #cfcfd4;
+  line-height: 1.5;
+}
+.sky-annote {
+  fill: #9aa0aa;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+.sky-annote-dim { fill: #5a6270; }
+.marker-name, .marker-el {
+  fill: #fff6d8;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+.earth-name, .sky-earth .marker-el { fill: #d4eefc; }
+.sky-pulse {
+  fill: #e3b34a;
+  opacity: 0.2;
+  transform-origin: center;
+  animation: skyPulse 2.4s ease-out infinite;
+}
+.earth-pulse { fill: #5ba8d8; }
+
+@keyframes skyPulse {
+  0% { opacity: .35; transform: scale(0.85); }
+  70% { opacity: 0; transform: scale(1.55); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+
 .hero-note {
   margin-top: 14px;
   max-width: 520px;
@@ -1162,4 +1274,5 @@ body.theme-docs .site-footer {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
+  .sky-pulse { animation: none; }
 }
