@@ -1,6 +1,8 @@
-# B6 (Product 69) — current blocker
+# B6 (Product 69) — blocked pending owner review
 
-**Status:** Not executed in this repository run.
+**Status:** Data for the **Earth-visibility** 65°S–90°S **240 m** GeoTIFF can be staged under `data/LOLA_product69/` (ignored). **Encoding for this file is settled:** valid pixels are raw **`int16` DNs**; **mask `nodata = -32768`** first, then convert **once** with **`fraction = DN × 0.00004`**. Any comparison output must record **both** raw DN and converted fraction (and row/col or map coordinates) for traceability.
+
+**Current phase:** **Owner review** — confirm Earth visibility is the intended B6 metric; complete the checklist below (label/scaling, CRS, S04-P02 location, comparison definition). **Do not** treat Product 69 as a **2025 hourly** oracle or invent acceptance thresholds.
 
 ## Choose one layer before downloading
 
@@ -39,7 +41,13 @@ Record answers in team notes or `research-results/` (ignored); do not commit lar
 | 6. S04-P02 | Map point to row/col; verify valid pixel and record DN + converted fraction. |
 | 7. Comparison definition | Write down what is being compared (e.g. reference long-term fraction vs model long-term aggregate only — **not** 2025 hourly). |
 
+After owner sign-off, implement the **S04-P02** sample (or small neighborhood) with **coordinate transform and masking** documented in the run note. Each reported value: **DN**, **`DN × 0.00004`**, validity flag, and CRS/pixel indices.
+
 After the checklist is complete, implement sampling/compare in a script or notebook and write results to **`research-results/`** only. **`b6_status`** stays **`manifest_only…`** or a new blocked state until owner signs off.
+
+**Independence from B5:** B5 terrain gates are **separate** — B6 can proceed on review schedule without closing B5.
+
+**Repository gates:** `SCIENCE_CALCULATIONS_READY=false`; `POST /v1/compare` remains gated; prototype stays **SYNTHETIC** until explicit benchmark enablement.
 
 ```bash
 mkdir -p data/LOLA_product69
