@@ -4,6 +4,20 @@
 
 This note summarizes **stages and contracts** for a terrain-aware visibility navigator. For staged method detail see **[METHOD_DECISION.md](METHOD_DECISION.md)**. For benchmark metrics and gate language see **[BENCHMARK_PLAN.md](BENCHMARK_PLAN.md)**. For frame, notebook, and horizon terminology see **[FRAME_GEOMETRY_VALIDATION.md](FRAME_GEOMETRY_VALIDATION.md)**. For far-field terrain and Product 69/90 *research* context see **[FAR_FIELD_B5_B6_PLAN.md](FAR_FIELD_B5_B6_PLAN.md)**.
 
+## Tool stack (what does what)
+
+No single package covers validated science, GIS rasters, and browser visuals. Keep responsibilities separate:
+
+| Need | Good fit | Use it for |
+|------|----------|------------|
+| Sun/Earth positions over time | [NAIF SPICE](https://naif.jpl.nasa.gov/) via [SpiceyPy](https://github.com/AndrewAnnex/spiceypy) | Ephemerides and reference-frame transforms (`spkezr`, `pxform`, `azlcpo`, etc.); derived observation geometry *relative to documented frames and kernels*. |
+| Raster and lunar coordinates | **rasterio** + **pyproj** (existing research stack) | DEM reads, CRS, masks, site coordinates, terrain horizon sampling. Ballpark or unvalidated frame mapping stays a **blocker** for science claims — see [DATASET_INTAKE_CHECKLIST.md](DATASET_INTAKE_CHECKLIST.md) and [FRAME_GEOMETRY_VALIDATION.md](FRAME_GEOMETRY_VALIDATION.md). |
+| Dynamic 3D visuals (static site) | **Three.js** (+ **OrbitControls** in the prototype) | Spheres, textures, camera/light — [prototype](prototype/index.html) loads `three.module.js` and keeps synthetic sky math in [`ephemeris.js`](prototype/ephemeris.js). **Illustration only** — not SPICE. |
+| Optional full globe / map UI | **CesiumJS** | Global globe with terrain/imagery layers; extra setup vs custom lunar polar rasters; still not a substitute for SPICE + validated rasters. |
+| Visual assets | [NASA 3D Resources](https://nasa3d.arc.nasa.gov/) and related Moon imagery | Appearance (textures, models). Treat as **display**; they do not define geometry. |
+
+**Hub / notebooks:** SpiceyPy and rasterio are already on the Hub image (see `backend/Dockerfile`). The API remains gated for validated compare until benchmarks pass; storing run metadata in SQLite is unrelated to ephemeris math.
+
 ## Stages
 
 1. **Terrain input** — DEM / multiband stack (and metadata) covering the observer and required azimuths.

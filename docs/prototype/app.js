@@ -2,32 +2,13 @@
  * Synthetic training demo — no validated lunar geometry or terrain.
  * State contract: docs/ENGINE_CALCULATION_PIPELINE.md
  * Polar sky is an invented local-plane drawing, not a DEM.
+ * Three.js / OrbitControls: visuals only; ephemeris lives in ephemeris.js (synthetic).
+ * Polar terrain fill uses a moon albedo image as display-only texture (not geometry).
  */
 
-const SIMULATION = {
-  label:
-    "SYNTHETIC local-plane model: invented elevations, azimuths, and terrain rules. Not Product 78/90/69.",
-  geometricHorizonDeg: 0,
-  sunAzimuthDeg(hour) {
-    return (hour * 15) % 360;
-  },
-  earthAzimuthDeg(hour) {
-    return (hour * 15 + 140) % 360;
-  },
-  terrainHorizon(siteKey, azDeg) {
-    const a = ((azDeg % 360) + 360) % 360;
-    if (siteKey === "malapert") {
-      if (a >= 20 && a <= 40) return { elevationDeg: null, terrainKnown: false };
-      if (a >= 70 && a <= 110) {
-        const t = (a - 70) / 40;
-        const bump = Math.sin(Math.PI * t);
-        return { elevationDeg: 12 * bump, terrainKnown: true };
-      }
-      return { elevationDeg: 0, terrainKnown: true };
-    }
-    return { elevationDeg: 0, terrainKnown: true };
-  },
-};
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SIMULATION, sites, syntheticBodyAngles } from "./ephemeris.js";
 
 function classifyCentreRay(targetElDeg, horizonDeg, terrainKnown) {
   if (!terrainKnown || horizonDeg === null || Number.isNaN(horizonDeg)) {
@@ -57,34 +38,10 @@ function classifyCentreRay(targetElDeg, horizonDeg, terrainKnown) {
   };
 }
 
-const sites = {
-  s04p02: {
-    name: "Site04 S04-P02",
-    id: "LOLA Site04 · X/Y −2652.5 / −6082.5 m",
-    phase: 0.15,
-    earthPhase: 1.05,
-    lat: -89.78,
-    lon: -156.44,
-  },
-  shackleton: {
-    name: "Shackleton rim",
-    id: "PROVISIONAL · LOLA SITE04",
-    phase: 0.15,
-    earthPhase: 1.05,
-    lat: -89.54,
-    lon: 129.2,
-  },
-  malapert: {
-    name: "Malapert Massif",
-    id: "PROVISIONAL · LOLA SITE23",
-    phase: 1.1,
-    earthPhase: 0.35,
-    lat: -86.0,
-    lon: 2.7,
-  },
-};
-
 const POLAR = { cx: 220, cy: 228, r0: 148, elScale: 5.4, rMin: 58, rMax: 210 };
+
+/** Display-only moon surface image (aligned with Three.js globe texture). Not validated DEM geometry. */
+const LUNAR_ALBEDO_URL = "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/moon_1024.jpg";
 
 const siteA = document.querySelector("#site-a");
 const siteB = document.querySelector("#site-b");
@@ -141,10 +98,6 @@ function bindAuthLinks() {
   }
 }
 
-function angle(phase, hour, amplitude, offset = 0) {
-  return offset + amplitude * Math.sin((2 * Math.PI * hour) / 24 + phase);
-}
-
 function toY(deg) {
   const top = 30;
   const bottom = 220;
@@ -153,18 +106,30 @@ function toY(deg) {
   return bottom - ((deg - min) / (max - min)) * (bottom - top);
 }
 
-function makePath(phase, amplitude, offset) {
+function makeSunPath(siteKey) {
   const points = [];
+  const dateStr = dateInput?.value || "";
   for (let hour = 0; hour < 24; hour += 1) {
     const x = 55 + (hour / 23) * 725;
-    const y = toY(angle(phase, hour, amplitude, offset));
-    points.push((hour === 0 ? "M" : "L") + ` ${x.toFixed(1)} ${y.toFixed(1)}`);
+    const { sunEl } = syntheticBodyAngles(siteKey, hour, dateStr);
+    points.push((hour === 0 ? "M" : "L") + ` ${x.toFixed(1)} ${toY(sunEl).toFixed(1)}`);
   }
   return points.join(" ");
 }
 
-function makeArea(phase, amplitude, offset) {
-  const line = makePath(phase, amplitude, offset);
+function makeEarthPath(siteKey) {
+  const points = [];
+  const dateStr = dateInput?.value || "";
+  for (let hour = 0; hour < 24; hour += 1) {
+    const x = 55 + (hour / 23) * 725;
+    const { earthEl } = syntheticBodyAngles(siteKey, hour, dateStr);
+    points.push((hour === 0 ? "M" : "L") + ` ${x.toFixed(1)} ${toY(earthEl).toFixed(1)}`);
+  }
+  return points.join(" ");
+}
+
+function makeSunArea(siteKey) {
+  const line = makeSunPath(siteKey);
   const y0 = toY(0);
   return `${line} L 780 ${y0.toFixed(1)} L 55 ${y0.toFixed(1)} Z`;
 }
@@ -198,6 +163,127 @@ function polarXY(azDeg, elDeg) {
     x: POLAR.cx + r * Math.sin(rad),
     y: POLAR.cy - r * Math.cos(rad),
   };
+}
+
+/** Inverse of polarXY for SVG coords (synthetic polar map). Not validated lunar geometry. */
+function polarFromXY(x, y) {
+  const dx = x - POLAR.cx;
+  const dy = y - POLAR.cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 0.5) {
+    return { azDeg: 0, elDeg: 15 };
+  }
+  const r = Math.min(POLAR.rMax, Math.max(POLAR.rMin, dist));
+  let elDeg = (POLAR.r0 - r) / POLAR.elScale;
+  elDeg = Math.min(15, Math.max(-12, elDeg));
+  let azDeg = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  if (azDeg < 0) azDeg += 360;
+  return { azDeg, elDeg };
+}
+
+/**
+ * Optional drag offsets per polar plot (SYNTHETIC exploration). Cleared when site/date/hour changes.
+ * lander: { x, y } SVG coords for ray origin (default = zenith at POLAR.cx / POLAR.cy).
+ */
+const plotDrag = {
+  sessionKey: "",
+  pa: { sun: null, earth: null, lander: null },
+  pb: { sun: null, earth: null, lander: null },
+};
+
+function plotDragSessionKey() {
+  return `pa:${siteA.value}|pb:${siteB.value}|${dateInput?.value || ""}|${timeInput?.value ?? ""}`;
+}
+
+function syncPlotDragSession() {
+  const k = plotDragSessionKey();
+  if (plotDrag.sessionKey !== k) {
+    plotDrag.sessionKey = k;
+    plotDrag.pa = { sun: null, earth: null, lander: null };
+    plotDrag.pb = { sun: null, earth: null, lander: null };
+  }
+}
+
+function rayOrigin(prefix) {
+  const L = plotDrag[prefix]?.lander;
+  if (L && Number.isFinite(L.x) && Number.isFinite(L.y)) {
+    return { x: L.x, y: L.y };
+  }
+  return { x: POLAR.cx, y: POLAR.cy };
+}
+
+let polarDragActive = null;
+
+function clientToSvgPoint(svg, clientX, clientY) {
+  if (!svg?.createSVGPoint) return null;
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  return pt.matrixTransform(ctm.inverse());
+}
+
+function bindPolarInteractions() {
+  document.querySelectorAll(".sky-svg").forEach((svg) => {
+    const prefix = svg.closest("#plot-a, #plot-b")?.id === "plot-a" ? "pa" : "pb";
+    if (!svg.dataset.dragBound) {
+      svg.dataset.dragBound = "1";
+      svg.addEventListener("pointerdown", (e) => {
+        const t = e.target;
+        const sunG = t.closest?.(".sky-sun");
+        const earthG = t.closest?.(".sky-earth");
+        const landerG = t.closest?.(".sky-observer");
+        const kind = sunG ? "sun" : earthG ? "earth" : landerG ? "lander" : null;
+        if (!kind) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const pt = clientToSvgPoint(svg, e.clientX, e.clientY);
+        if (!pt) return;
+        polarDragActive = { svg, prefix, kind, pointerId: e.pointerId };
+        svg.setPointerCapture(e.pointerId);
+        if (kind === "lander") {
+          plotDrag[prefix].lander = { x: pt.x, y: pt.y };
+        } else {
+          const { azDeg, elDeg } = polarFromXY(pt.x, pt.y);
+          plotDrag[prefix][kind] = { az: azDeg, el: elDeg };
+        }
+        render();
+      });
+      svg.addEventListener("pointermove", (e) => {
+        if (!polarDragActive || polarDragActive.svg !== svg || polarDragActive.pointerId !== e.pointerId) return;
+        const pt = clientToSvgPoint(svg, e.clientX, e.clientY);
+        if (!pt) return;
+        const { prefix, kind } = polarDragActive;
+        if (kind === "lander") {
+          plotDrag[prefix].lander = { x: pt.x, y: pt.y };
+        } else {
+          const { azDeg, elDeg } = polarFromXY(pt.x, pt.y);
+          plotDrag[prefix][kind] = { az: azDeg, el: elDeg };
+        }
+        render();
+      });
+      const endDrag = (e) => {
+        if (!polarDragActive || polarDragActive.svg !== svg || polarDragActive.pointerId !== e.pointerId) return;
+        try {
+          svg.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        polarDragActive = null;
+      };
+      svg.addEventListener("pointerup", (e) => {
+        endDrag(e);
+        render();
+      });
+      svg.addEventListener("pointercancel", endDrag);
+      svg.addEventListener("dblclick", (e) => {
+        if (e.target.closest(".sky-sun, .sky-earth, .sky-observer")) return;
+        plotDrag[prefix] = { sun: null, earth: null, lander: null };
+        render();
+      });
+    }
+  });
 }
 
 function sunGlyph() {
@@ -263,6 +349,14 @@ function skySvgMarkup(prefix) {
         <pattern id="${prefix}-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
           <line x1="0" y1="0" x2="0" y2="8" stroke="#c45c5c" stroke-width="2" opacity="0.7"/>
         </pattern>
+        <pattern id="${prefix}-lunar-regolith" width="200" height="200" patternUnits="userSpaceOnUse" patternContentUnits="userSpaceOnUse" patternTransform="rotate(-8 ${POLAR.cx} ${POLAR.cy})">
+          <image href="${LUNAR_ALBEDO_URL}" xlink:href="${LUNAR_ALBEDO_URL}" width="200" height="200" preserveAspectRatio="xMidYMid slice" opacity="0.92"/>
+        </pattern>
+        <linearGradient id="${prefix}-terrain-shade" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f0e8dc" stop-opacity="0.12"/>
+          <stop offset="45%" stop-color="#1a1814" stop-opacity="0.38"/>
+          <stop offset="100%" stop-color="#0a0908" stop-opacity="0.22"/>
+        </linearGradient>
         <filter id="${prefix}-glow" x="-80%" y="-80%" width="260%" height="260%">
           <feGaussianBlur stdDeviation="3.5" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -270,7 +364,7 @@ function skySvgMarkup(prefix) {
       </defs>
       <circle class="sky-disc" cx="${POLAR.cx}" cy="${POLAR.cy}" r="${POLAR.rMax}" fill="url(#${prefix}-sky)"/>
       ${rings}
-      <path id="${prefix}-terrain" class="sky-terrain"/>
+      <path id="${prefix}-terrain" class="sky-terrain" fill="url(#${prefix}-lunar-regolith)" stroke="url(#${prefix}-terrain-shade)"/>
       <g id="${prefix}-gaps"></g>
       <circle class="sky-geo-dash" cx="${POLAR.cx}" cy="${POLAR.cy}" r="${polarRadius(0).toFixed(1)}"/>
       <text class="sky-annote" x="${POLAR.cx + polarRadius(0) + 4}" y="${POLAR.cy - 4}">0° geometric</text>
@@ -278,7 +372,8 @@ function skySvgMarkup(prefix) {
       ${dirs}
       <g id="${prefix}-ray-sun" class="sky-ray"></g>
       <g id="${prefix}-ray-earth" class="sky-ray earth-ray"></g>
-      <g class="sky-observer" transform="translate(${POLAR.cx} ${POLAR.cy})">
+      <g class="sky-observer" role="button" tabindex="0" aria-label="Observer (lander) — drag to move ray origins. Double-click plot to reset.">
+        <text class="sky-zenith" x="0" y="-18" text-anchor="middle">zenith</text>
         ${landerGlyph()}
       </g>
       <g id="${prefix}-sun" class="sky-marker sky-sun" filter="url(#${prefix}-glow)">
@@ -291,8 +386,7 @@ function skySvgMarkup(prefix) {
         <text class="marker-name earth-name" y="-22" text-anchor="middle">Earth</text>
         <text class="marker-el" id="${prefix}-earth-el" y="28" text-anchor="middle"></text>
       </g>
-      <text class="sky-zenith" x="${POLAR.cx}" y="${POLAR.cy - 18}" text-anchor="middle">zenith</text>
-      <text class="sky-caption" x="${POLAR.cx}" y="454" text-anchor="middle">Inward = higher elevation · brown = terrain · hatch = no data</text>
+      <text class="sky-caption" x="${POLAR.cx}" y="454" text-anchor="middle">Inward = higher elevation · terrain = invented silhouette (moon texture, not real DEM) · drag Sun/Earth/lander · hatch = no data</text>
     </svg>`;
 }
 
@@ -301,6 +395,17 @@ function mountPlots() {
   const b = document.querySelector("#plot-b");
   if (a && !a.querySelector("svg")) a.innerHTML = skySvgMarkup("pa");
   if (b && !b.querySelector("svg")) b.innerHTML = skySvgMarkup("pb");
+  bindPolarInteractions();
+}
+
+function readoutDragSuffix(prefix) {
+  const d = plotDrag[prefix];
+  const parts = [];
+  if (d?.sun) parts.push("Sun hand-drag");
+  if (d?.earth) parts.push("Earth hand-drag");
+  if (d?.lander) parts.push("observer moved");
+  if (!parts.length) return "";
+  return ` · OVERRIDE: ${parts.join(", ")}`;
 }
 
 function terrainFillPath(siteKey) {
@@ -341,6 +446,10 @@ function gapWedges(siteKey, prefix) {
 
 function moveMarker(el, x, y) {
   if (!el) return;
+  if (polarDragActive) {
+    el.setAttribute("transform", `translate(${x} ${y})`);
+    return;
+  }
   if (hasGsap && !reducedMotion) {
     if (!markersReady) {
       window.gsap.set(el, { x, y });
@@ -355,17 +464,25 @@ function moveMarker(el, x, y) {
 function setRay(prefix, kind, az, el) {
   const g = document.querySelector(`#${prefix}-ray-${kind}`);
   if (!g) return;
-  const origin = { x: POLAR.cx, y: POLAR.cy };
+  const origin = rayOrigin(prefix);
   const tip = polarXY(az, el);
   g.innerHTML = `<line x1="${origin.x}" y1="${origin.y}" x2="${tip.x.toFixed(1)}" y2="${tip.y.toFixed(1)}"/>`;
 }
 
-function snapshot(siteKey, hour) {
+function snapshot(siteKey, hour, prefix) {
   const site = sites[siteKey];
-  const sunEl = angle(site.phase, hour, 8.2, -0.7);
-  const earthEl = angle(site.earthPhase, hour, 6.5, -0.3);
-  const sunAz = SIMULATION.sunAzimuthDeg(hour);
-  const earthAz = SIMULATION.earthAzimuthDeg(hour);
+  const dateStr = dateInput?.value || "";
+  const base = syntheticBodyAngles(siteKey, hour, dateStr);
+  let { sunEl, earthEl, sunAz, earthAz } = base;
+  const ov = plotDrag[prefix];
+  if (ov?.sun) {
+    sunAz = ov.sun.az;
+    sunEl = ov.sun.el;
+  }
+  if (ov?.earth) {
+    earthAz = ov.earth.az;
+    earthEl = ov.earth.el;
+  }
   const sunH = SIMULATION.terrainHorizon(siteKey, sunAz);
   const earthH = SIMULATION.terrainHorizon(siteKey, earthAz);
   return {
@@ -446,7 +563,7 @@ function lessonCopy(hour, snapA, snapB) {
   if (snapA.sunSt.code === "unknown" || snapB.sunSt.code === "unknown") {
     bits.push("A hatched wedge means the engine lacks terrain on that azimuth, so the Sun is Unknown — it does not default to clear sky.");
   } else if (snapA.sunSt.code === "blocked" || snapB.sunSt.code === "blocked") {
-    bits.push("Brown fill is the synthetic terrain skyline. If the Sun sits in or behind that fill, the centre ray is Blocked even if elevation looks small and positive.");
+    bits.push("The shaded moon-textured fill is the synthetic terrain skyline (appearance only, not a DEM). If the Sun sits in or behind that fill, the centre ray is Blocked even if elevation looks small and positive.");
   } else {
     bits.push("Both Suns are Clear: each centre ray is above the known terrain horizon at this hour.");
   }
@@ -473,7 +590,8 @@ function pulseStatus(key) {
 }
 
 function updatePlot(prefix, siteKey, hour) {
-  const snap = snapshot(siteKey, hour);
+  syncPlotDragSession();
+  const snap = snapshot(siteKey, hour, prefix);
   const terrain = document.querySelector(`#${prefix}-terrain`);
   if (terrain) terrain.setAttribute("d", terrainFillPath(siteKey));
   gapWedges(siteKey, prefix);
@@ -481,6 +599,12 @@ function updatePlot(prefix, siteKey, hour) {
   const earthPt = polarXY(snap.earthAz, snap.earthEl);
   moveMarker(document.querySelector(`#${prefix}-sun`), sunPt.x, sunPt.y);
   moveMarker(document.querySelector(`#${prefix}-earth`), earthPt.x, earthPt.y);
+  const plotEl = document.querySelector(prefix === "pa" ? "#plot-a" : "#plot-b");
+  const observerG = plotEl?.querySelector(".sky-observer");
+  const L = plotDrag[prefix]?.lander;
+  const ox = L?.x ?? POLAR.cx;
+  const oy = L?.y ?? POLAR.cy;
+  moveMarker(observerG, ox, oy);
   const sunElLab = document.querySelector(`#${prefix}-sun-el`);
   const earthElLab = document.querySelector(`#${prefix}-earth-el`);
   if (sunElLab) sunElLab.textContent = `${snap.sunEl.toFixed(1)}°`;
@@ -520,9 +644,9 @@ function render() {
     " " +
     whyBody("Earth", snapB.earthEl, snapB.earthAz, snapB.earthH, snapB.earthSt);
   document.querySelector("#readout-a").textContent =
-    `${snapA.site.id} · Sun az ${snapA.sunAz.toFixed(0)}° el ${snapA.sunEl.toFixed(1)}° · Earth az ${snapA.earthAz.toFixed(0)}° el ${snapA.earthEl.toFixed(1)}° · ${date} ${String(hour).padStart(2, "0")}:00 UTC · SYNTHETIC`;
+    `${snapA.site.id} · Sun az ${snapA.sunAz.toFixed(0)}° el ${snapA.sunEl.toFixed(1)}° · Earth az ${snapA.earthAz.toFixed(0)}° el ${snapA.earthEl.toFixed(1)}° · ${date} ${String(hour).padStart(2, "0")}:00 UTC · SYNTHETIC${readoutDragSuffix("pa")}`;
   document.querySelector("#readout-b").textContent =
-    `${snapB.site.id} · Sun az ${snapB.sunAz.toFixed(0)}° el ${snapB.sunEl.toFixed(1)}° · Earth az ${snapB.earthAz.toFixed(0)}° el ${snapB.earthEl.toFixed(1)}° · centre-ray only`;
+    `${snapB.site.id} · Sun az ${snapB.sunAz.toFixed(0)}° el ${snapB.sunEl.toFixed(1)}° · Earth az ${snapB.earthAz.toFixed(0)}° el ${snapB.earthEl.toFixed(1)}° · centre-ray only${readoutDragSuffix("pb")}`;
 
   const lesson = lessonCopy(hour, snapA, snapB);
   const headline = document.querySelector("#lesson-headline");
@@ -550,10 +674,9 @@ function render() {
       </div>`;
   }
 
-  const a = sites[keyA];
-  sunLine?.setAttribute("d", makePath(a.phase, 8.2, -0.7));
-  earthLine?.setAttribute("d", makePath(a.earthPhase, 6.5, -0.3));
-  sunArea?.setAttribute("d", makeArea(a.phase, 8.2, -0.7));
+  sunLine?.setAttribute("d", makeSunPath(keyA));
+  earthLine?.setAttribute("d", makeEarthPath(keyA));
+  sunArea?.setAttribute("d", makeSunArea(keyA));
   geoHorizonLine?.setAttribute("d", makeHorizonPath(SIMULATION.geometricHorizonDeg));
   terrainHorizonLineA?.setAttribute("d", makeTerrainHorizonPath(keyA));
   const x = 55 + (hour / 23) * 725;
@@ -793,7 +916,7 @@ async function createStubRun() {
 function latLonToVec(lat, lon, radius) {
   const phi = ((90 - lat) * Math.PI) / 180;
   const theta = ((lon + 180) * Math.PI) / 180;
-  return new window.THREE.Vector3(
+  return new THREE.Vector3(
     -radius * Math.sin(phi) * Math.cos(theta),
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta)
@@ -818,7 +941,7 @@ function craterTexture() {
   }
   ctx.fillStyle = "rgba(40,40,48,0.35)";
   ctx.fillRect(0, 470, 512, 42);
-  return new window.THREE.CanvasTexture(c);
+  return new THREE.CanvasTexture(c);
 }
 
 function earthTexture() {
@@ -842,11 +965,11 @@ function earthTexture() {
   ctx.fillStyle = "#e8eef4";
   ctx.fillRect(0, 0, 128, 6);
   ctx.fillRect(0, 58, 128, 6);
-  return new window.THREE.CanvasTexture(c);
+  return new THREE.CanvasTexture(c);
 }
 
 function makeBeacon(color) {
-  const T = window.THREE;
+  const T = THREE;
   const g = new T.Group();
   const cone = new T.Mesh(new T.ConeGeometry(0.028, 0.1, 10), new T.MeshBasicMaterial({ color }));
   cone.position.y = 0.06;
@@ -859,18 +982,18 @@ function makeBeacon(color) {
 function placeBeacon(group, lat, lon) {
   const p = latLonToVec(lat, lon, 1.02);
   group.position.copy(p);
-  group.quaternion.setFromUnitVectors(new window.THREE.Vector3(0, 1, 0), p.clone().normalize());
+  group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p.clone().normalize());
 }
 
-const globe = { ready: false, userRot: { x: 0, y: 0 }, didOrbit: false };
+const globe = { ready: false };
 
 function loadMoonAlbedo(material) {
-  const loader = new window.THREE.TextureLoader();
+  const loader = new THREE.TextureLoader();
   loader.setCrossOrigin("anonymous");
   loader.load(
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/moon_1024.jpg",
     (tex) => {
-      if (window.THREE.SRGBColorSpace) tex.colorSpace = window.THREE.SRGBColorSpace;
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
       material.map = tex;
       material.needsUpdate = true;
     },
@@ -879,69 +1002,57 @@ function loadMoonAlbedo(material) {
   );
 }
 
-function bindGlobeOrbit(host) {
-  const onDown = (event) => {
-    globe.dragging = true;
-    globe.didOrbit = true;
-    globe.lastX = event.clientX;
-    globe.lastY = event.clientY;
-    host.setPointerCapture?.(event.pointerId);
-  };
-  const onUp = () => {
-    globe.dragging = false;
-  };
-  const onMove = (event) => {
-    if (!globe.dragging) return;
-    globe.userRot.y += (event.clientX - globe.lastX) * 0.008;
-    globe.userRot.x = Math.max(-0.45, Math.min(0.55, globe.userRot.x + (event.clientY - globe.lastY) * 0.006));
-    globe.lastX = event.clientX;
-    globe.lastY = event.clientY;
-  };
-  host.addEventListener("pointerdown", onDown);
-  host.addEventListener("pointerup", onUp);
-  host.addEventListener("pointercancel", onUp);
-  host.addEventListener("pointermove", onMove);
-}
-
 function initGlobe() {
   const host = document.querySelector("#moon-globe");
-  if (!host || !window.THREE) return;
+  if (!host) return;
   try {
-    const T = window.THREE;
     const w = host.clientWidth || 260;
     const h = host.clientHeight || 260;
-    const scene = new T.Scene();
-    const camera = new T.PerspectiveCamera(32, w / h, 0.1, 40);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, w / h, 0.1, 40);
     camera.position.set(0, -3.4, 2.6);
-    camera.lookAt(0, -1.05, 0);
-    const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    camera.lookAt(0, -0.2, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h);
     host.appendChild(renderer.domElement);
 
-    const moonMat = new T.MeshStandardMaterial({
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, -0.15, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 1.85;
+    controls.maxDistance = 6;
+    controls.enablePan = false;
+
+    const moonMat = new THREE.MeshStandardMaterial({
       map: craterTexture(),
       roughness: 0.95,
       metalness: 0.02,
     });
-    const moon = new T.Mesh(new T.SphereGeometry(1, 64, 64), moonMat);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), moonMat);
     loadMoonAlbedo(moonMat);
     scene.add(moon);
 
     const polePts = [];
     for (let i = 0; i <= 64; i += 1) {
       const t = (i / 64) * Math.PI * 2;
-      polePts.push(new T.Vector3(Math.cos(t) * 0.14, -0.99, Math.sin(t) * 0.14));
+      polePts.push(new THREE.Vector3(Math.cos(t) * 0.14, -0.99, Math.sin(t) * 0.14));
     }
-    moon.add(new T.Line(new T.BufferGeometry().setFromPoints(polePts), new T.LineBasicMaterial({ color: 0xe3b34a, transparent: true, opacity: 0.7 })));
+    const polarRing = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(polePts),
+      new THREE.LineBasicMaterial({ color: 0xe3b34a, transparent: true, opacity: 0.7 })
+    );
+    moon.add(polarRing);
 
-    const amb = new T.AmbientLight(0x8899aa, 0.32);
-    const sun = new T.DirectionalLight(0xffe6b0, 1.45);
-    const sunBall = new T.Mesh(new T.SphereGeometry(0.11, 16, 16), new T.MeshBasicMaterial({ color: 0xffe08a }));
+    const amb = new THREE.AmbientLight(0x8899aa, 0.32);
+    const sun = new THREE.DirectionalLight(0xffe6b0, 1.45);
+    sun.castShadow = false;
+    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffe08a }));
     scene.add(amb, sun, sunBall);
-    const earth = new T.Mesh(
-      new T.SphereGeometry(0.09, 20, 20),
-      new T.MeshBasicMaterial({ map: earthTexture() })
+    const earth = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 20, 20),
+      new THREE.MeshBasicMaterial({ map: earthTexture() })
     );
     scene.add(earth);
     const pinA = makeBeacon(0xe3b34a);
@@ -958,8 +1069,8 @@ function initGlobe() {
     globe.scene = scene;
     globe.camera = camera;
     globe.moon = moon;
+    globe.controls = controls;
 
-    bindGlobeOrbit(host);
     window.addEventListener("resize", () => {
       if (!globe.ready) return;
       const nw = host.clientWidth || 260;
@@ -969,12 +1080,8 @@ function initGlobe() {
       renderer.setSize(nw, nh);
     });
 
-    const spin = { t: 0 };
     function tick() {
-      spin.t += 0.003;
-      const idle = !globe.didOrbit && !reducedMotion ? Math.sin(spin.t) * 0.08 : 0;
-      moon.rotation.y = globe.userRot.y + idle;
-      moon.rotation.x = globe.userRot.x;
+      controls.update();
       renderer.render(scene, camera);
       globe.raf = requestAnimationFrame(tick);
     }
@@ -992,13 +1099,14 @@ function updateGlobe(keyA, keyB, hour) {
   placeBeacon(globe.pinA, a.lat, a.lon);
   placeBeacon(globe.pinB, b.lat, b.lon);
   const az = (SIMULATION.sunAzimuthDeg(hour) * Math.PI) / 180;
-  globe.sun.position.set(Math.sin(az) * 4, -0.2, Math.cos(az) * 4);
-  globe.sunBall.position.copy(globe.sun.position);
+  const sunDir = new THREE.Vector3(Math.sin(az), 0.35, Math.cos(az)).normalize();
+  globe.sun.position.copy(sunDir.clone().multiplyScalar(5));
+  globe.sunBall.position.copy(sunDir.clone().multiplyScalar(5));
   const eaz = (SIMULATION.earthAzimuthDeg(hour) * Math.PI) / 180;
   globe.earth.position.set(Math.sin(eaz) * 1.7, -0.15, Math.cos(eaz) * 1.7);
   const cap = document.querySelector("#globe-caption");
   if (cap) {
-    cap.textContent = `Illustrative south pole · A ${a.name} · B ${b.name} · Sun az ${SIMULATION.sunAzimuthDeg(hour).toFixed(0)}° · Three.js albedo · SYNTHETIC`;
+    cap.textContent = `Illustrative south pole · A ${a.name} · B ${b.name} · Sun az ${SIMULATION.sunAzimuthDeg(hour).toFixed(0)}° · Three.js OrbitControls · SYNTHETIC`;
   }
 }
 
@@ -1007,6 +1115,7 @@ function initStarfield() {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const stars = [];
+  let starRaf = null;
   function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -1023,7 +1132,7 @@ function initStarfield() {
       });
     }
   }
-  function draw() {
+  function drawFrame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const s of stars) {
       if (!reducedMotion) s.tw += s.sp;
@@ -1033,10 +1142,10 @@ function initStarfield() {
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     }
-    requestAnimationFrame(draw);
+    starRaf = requestAnimationFrame(drawFrame);
   }
   resize();
-  draw();
+  starRaf = requestAnimationFrame(drawFrame);
   window.addEventListener("resize", resize);
 }
 
@@ -1044,7 +1153,7 @@ const GLOSS = {
   geometric:
     "Geometric 0° is the local horizon of a smooth sphere. A target can sit above it and still hide behind real (or synthetic) terrain.",
   terrain:
-    "The brown fill is the terrain horizon — the highest blocking elevation along each azimuth. Compare the Sun/Earth discs to this silhouette, not only to 0°.",
+    "The moon-textured fill is the terrain horizon silhouette — the highest blocking elevation along each azimuth (texture is display-only). Compare the Sun/Earth discs to this silhouette, not only to 0°.",
   centre:
     "Centre-ray means one line of sight through the disc centre. It is not finite-disc visibility, solar power, or a communications link.",
   unknown:

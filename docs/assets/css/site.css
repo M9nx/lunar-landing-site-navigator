@@ -1075,7 +1075,7 @@ body[data-highlight="geometric"] .horizon-geo-line {
 body[data-highlight="terrain"] .sky-terrain {
   stroke: #ffe08a;
   stroke-width: 2.4;
-  fill: #5a4a32;
+  filter: brightness(1.12) saturate(1.05);
 }
 body[data-highlight="centre"] .sky-ray line {
   stroke-width: 2;
@@ -1175,15 +1175,33 @@ body[data-highlight="unknown"] .sky-gap {
 .sky-ring-geo { stroke: #8d8d92; stroke-dasharray: 5 6; stroke-width: 1.4; }
 .sky-geo-dash { fill: none; stroke: #9aa0aa; stroke-width: 1.2; stroke-dasharray: 7 5; opacity: .85; }
 .sky-terrain {
-  fill: #3a342c;
-  fill-opacity: .88;
-  stroke: #c9a15b;
-  stroke-width: 1.6;
+  /* fill/stroke come from SVG (moon texture pattern + gradient edge) — keep regolith tint */
+  fill-opacity: 0.94;
+  stroke-width: 1.5;
 }
 .sky-gap { stroke: #ff8a8a; stroke-width: 1; fill-opacity: .85; }
 .sky-dir { fill: #8d8d92; font-size: 12px; font-family: var(--font-mono); }
 .sky-zenith { fill: #5a6270; font-size: 10px; font-family: var(--font-mono); letter-spacing: .12em; }
 .sky-caption { fill: #6b6b72; font-size: 10px; font-family: var(--font-mono); }
+.sky-sun,
+.sky-earth {
+  cursor: grab;
+}
+.sky-sun:active,
+.sky-earth:active {
+  cursor: grabbing;
+}
+.sky-observer {
+  cursor: grab;
+  outline: none;
+}
+.sky-observer:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.sky-observer:active {
+  cursor: grabbing;
+}
 .sky-ray line { stroke: #e3b34a; stroke-width: 1; stroke-dasharray: 3 4; opacity: .45; }
 .sky-ray.earth-ray line { stroke: #5ba8d8; }
 .sky-marker { will-change: transform; }
