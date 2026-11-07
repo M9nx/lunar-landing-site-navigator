@@ -1075,7 +1075,7 @@ body[data-highlight="geometric"] .horizon-geo-line {
 body[data-highlight="terrain"] .sky-terrain {
   stroke: #ffe08a;
   stroke-width: 2.4;
-  fill: #5a4a32;
+  filter: brightness(1.12) saturate(1.05);
 }
 body[data-highlight="centre"] .sky-ray line {
   stroke-width: 2;
@@ -1175,15 +1175,33 @@ body[data-highlight="unknown"] .sky-gap {
 .sky-ring-geo { stroke: #8d8d92; stroke-dasharray: 5 6; stroke-width: 1.4; }
 .sky-geo-dash { fill: none; stroke: #9aa0aa; stroke-width: 1.2; stroke-dasharray: 7 5; opacity: .85; }
 .sky-terrain {
-  fill: #3a342c;
-  fill-opacity: .88;
-  stroke: #c9a15b;
-  stroke-width: 1.6;
+  /* fill/stroke come from SVG (moon texture pattern + gradient edge) — keep regolith tint */
+  fill-opacity: 0.94;
+  stroke-width: 1.5;
 }
 .sky-gap { stroke: #ff8a8a; stroke-width: 1; fill-opacity: .85; }
 .sky-dir { fill: #8d8d92; font-size: 12px; font-family: var(--font-mono); }
 .sky-zenith { fill: #5a6270; font-size: 10px; font-family: var(--font-mono); letter-spacing: .12em; }
 .sky-caption { fill: #6b6b72; font-size: 10px; font-family: var(--font-mono); }
+.sky-sun,
+.sky-earth {
+  cursor: grab;
+}
+.sky-sun:active,
+.sky-earth:active {
+  cursor: grabbing;
+}
+.sky-observer {
+  cursor: grab;
+  outline: none;
+}
+.sky-observer:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.sky-observer:active {
+  cursor: grabbing;
+}
 .sky-ray line { stroke: #e3b34a; stroke-width: 1; stroke-dasharray: 3 4; opacity: .45; }
 .sky-ray.earth-ray line { stroke: #5ba8d8; }
 .sky-marker { will-change: transform; }
@@ -1414,6 +1432,284 @@ body[data-highlight="unknown"] .sky-gap {
   .hud-grid { grid-template-columns: 1fr; }
   .engine-hero-meta { align-items: flex-start; }
   .moon-globe-wrap { width: min(320px, 100%); }
+}
+
+/* ----- Stream simulation lab (SIMULATION / PRACTICE) ----- */
+body[data-page="stream-lab"] {
+  background: radial-gradient(120% 60% at 50% 0%, #151520 0%, var(--black) 55%);
+}
+.stream-lab {
+  max-width: 1200px;
+  padding-bottom: 48px;
+}
+.stream-lab-hero {
+  display: grid;
+  grid-template-columns: 1fr minmax(200px, 280px);
+  gap: 24px;
+  align-items: start;
+  padding: 28px 0 12px;
+}
+.stream-lab-hero h1 {
+  font-family: var(--font-ui);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+.stream-lede { color: #c4c4cc; max-width: 62ch; margin: 0; }
+.stream-hero-badges { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.stream-chip-practice { border-color: var(--gold); color: var(--gold); }
+.stream-status-line {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  text-align: right;
+}
+
+.stream-toolbar {
+  background: linear-gradient(180deg, #14141a, #0e0e12);
+  border: 1px solid #32323a;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.stream-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+.stream-toolbar-controls { align-items: center; }
+.stream-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.stream-field-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.stream-input {
+  min-height: 44px;
+  min-width: 200px;
+  padding: 8px 10px;
+  background: #0c0c0f;
+  border: 1px solid #3a3a40;
+  color: var(--white);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.stream-range {
+  width: min(160px, 28vw);
+  accent-color: var(--nasa-red);
+}
+.stream-help {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+.stream-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  border: 1px solid #444;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stream-pill[data-state="connected"] { border-color: #2f6d4e; color: #8fe0b6; }
+.stream-pill[data-state="connecting"] { border-color: #6a552a; color: var(--gold); }
+.stream-pill[data-state="error"] { border-color: #8a3a3a; color: #ffb4b4; }
+
+.stream-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 20px;
+  align-items: start;
+}
+.stream-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.stream-card {
+  background: linear-gradient(180deg, #12141c, #0a0b10);
+  border: 1px solid #2e3340;
+  padding: 14px 14px 16px;
+  min-width: 0;
+}
+.stream-card-slot {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 4px;
+}
+.stream-card h2 {
+  font-family: var(--font-ui);
+  font-size: 1.2rem;
+  margin: 0 0 6px;
+}
+.stream-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+.stream-sky {
+  min-height: 220px;
+  background: #0a0b10;
+  border: 1px solid #2a2a32;
+  border-radius: 4px;
+  padding: 8px;
+}
+.stream-mini-svg { max-height: 260px; }
+.stream-mini-terrain {
+  fill: #4a4340;
+  fill-opacity: 0.9;
+  stroke: rgba(201, 161, 91, 0.45);
+  stroke-width: 1.2;
+}
+.stream-mini-ray { stroke-width: 1.2; stroke-dasharray: 3 3; }
+.stream-mini-ray-sun { stroke: var(--sun); opacity: 0.75; }
+.stream-mini-ray-earth { stroke: var(--earth); opacity: 0.75; }
+.stream-mini-sun { fill: var(--sun); }
+.stream-mini-earth { fill: var(--earth); }
+.stream-mini-zenith { fill: #5a6270; font-size: 9px; font-family: var(--font-mono); }
+
+.stream-legend {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.swatch-geo { background: #8d8d92; }
+.swatch-terr { background: linear-gradient(135deg, #a3988c, #5c564a); }
+.swatch-sun { background: var(--sun); }
+.swatch-earth { background: var(--earth); }
+
+.stream-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stream-moon-card,
+.stream-metrics {
+  background: #101014;
+  border: 1px solid #2a2a30;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #c4c4cc;
+}
+.stream-moon-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-family: var(--font-ui);
+}
+.stream-small { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+#stream-mini-globe { min-height: 140px; }
+#stream-mini-globe canvas { display: block; width: 100%; border-radius: 4px; }
+
+.stream-table-wrap {
+  margin-top: 28px;
+}
+.stream-table-wrap h2 {
+  font-family: var(--font-ui);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+.stream-table-scroll {
+  overflow-x: auto;
+  border: 1px solid #2e2e34;
+  background: #0c0c0f;
+}
+.stream-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 640px;
+}
+.stream-table th,
+.stream-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #222;
+}
+.stream-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--label);
+  background: #121216;
+}
+.stream-mono { font-family: var(--font-mono); font-size: 12px; }
+.stream-empty { color: var(--muted); text-align: center; padding: 20px; }
+.stream-state {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.stream-timeline {
+  margin-top: 28px;
+}
+.stream-timeline-svg {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+}
+.stream-tl-bg { fill: #101014; stroke: #2e2e34; }
+.stream-tl-playhead { stroke: var(--gold); stroke-width: 2; }
+.stream-tl-cap { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; }
+
+.stream-assumptions {
+  margin-top: 32px;
+  border: 1px solid #333;
+  background: #101014;
+  padding: 0;
+}
+.stream-assumptions summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+.stream-assumptions-inner {
+  padding: 0 18px 18px;
+  border-top: 1px solid #222;
+  color: #c4c4cc;
+  font-size: 14px;
+}
+.stream-assumptions-inner ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 980px) {
+  .stream-lab-hero { grid-template-columns: 1fr; }
+  .stream-hero-badges { align-items: flex-start; }
+  .stream-layout { grid-template-columns: 1fr; }
+  .stream-cards { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

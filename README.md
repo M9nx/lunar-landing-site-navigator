@@ -8,7 +8,7 @@ Central workspace for our NASA Space Apps 2026 challenge research, prototype, ev
 
 We are in the research and prototype-planning stage. The static interface is deployed on GitHub Pages. A Docker-based team API (GitHub OAuth, run history) and optional JupyterHub research workspace are scaffolded on a loopback Compose stack; validated lunar calculations are not enabled yet.
 
-Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities. LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed method is documented in [Method decision note](docs/METHOD_DECISION.md), with new product-level findings in the [research update](docs/RESEARCH_UPDATE.md).
+Current working understanding: help users compare lunar landing sites and dates by visualizing the Sun and Earth relative to the local horizon, to examine sunlight and direct-to-Earth communication opportunities. LOLA topography and illumination products are promising data sources. JPL NAIF SPICE is a candidate for date-specific geometry. The proposed method is documented in [Method decision note](docs/METHOD_DECISION.md), with new product-level findings in the [research update](docs/RESEARCH_UPDATE.md). For how **SPICE**, **rasterio/pyproj**, **Three.js**, and optional **Cesium** divide work, see [Engine calculation pipeline — tool stack](docs/ENGINE_CALCULATION_PIPELINE.md#tool-stack-what-does-what).
 
 ## Repository map
 
@@ -22,11 +22,12 @@ Current working understanding: help users compare lunar landing sites and dates 
 - [Operations guide](docs/OPERATIONS.md) — hostnames, CORS, revocation, backups, DockerSpawner boundary
 - [Project page](docs/index.html) — GitHub Pages landing page
 - [Prototype](docs/prototype/index.html) — interactive UI demo with clearly labeled synthetic values
+- [Stream simulation lab](docs/prototype/stream.html) — SIMULATION / PRACTICE SSE replay UI (`/v1/simulation/…`, not gated compare)
 - `compose.yaml`, `backend/`, and `jupyterhub/` — API, JupyterHub + DockerSpawner, and legacy single-user Jupyter
 
 ## Run the prototype locally
 
-Open `docs/prototype/index.html` in a browser. It is a static demo and has no package installation requirement.
+Serve the `docs/` folder over HTTP (e.g. `python3 -m http.server` from `docs/`) and open [`prototype/index.html`](docs/prototype/index.html). The demo loads **Three.js as an ES module** (import map + `ephemeris.js`); opening the file with `file://` may not resolve imports in all browsers. No `npm install` is required.
 
 ## Backend and research environment
 
