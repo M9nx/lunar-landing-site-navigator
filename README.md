@@ -22,6 +22,7 @@ Current working understanding: help users compare lunar landing sites and dates 
 - [Operations guide](docs/OPERATIONS.md) — hostnames, CORS, revocation, backups, DockerSpawner boundary
 - [Project page](docs/index.html) — GitHub Pages landing page
 - [Prototype](docs/prototype/index.html) — interactive UI demo with clearly labeled synthetic values
+- [Stream simulation lab](docs/prototype/stream.html) — SIMULATION / PRACTICE SSE replay UI (`/v1/simulation/…`, not gated compare)
 - `compose.yaml`, `backend/`, and `jupyterhub/` — API, JupyterHub + DockerSpawner, and legacy single-user Jupyter
 
 ## Run the prototype locally

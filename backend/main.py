@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from database import init_db
-from routers import admin_ops, auth, calc, runs
+from routers import admin_ops, auth, calc, runs, simulation_stream
 
 settings = get_settings()
 
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(runs.router)
 app.include_router(calc.router)
+app.include_router(simulation_stream.router)
 app.include_router(admin_ops.router)
 
 

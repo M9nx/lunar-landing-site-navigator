@@ -48,6 +48,8 @@ The static prototype ([`prototype/index.html`](prototype/index.html)) and unit t
 
 For JupyterHub vs API vs prototype boundaries see **[JUPYTER_PRACTICE_PASS.md](JUPYTER_PRACTICE_PASS.md)**.
 
+For the **SIMULATION incremental stream** (SSE + replay controls, separate from `POST /v1/compare`) see **[SIMULATION_STREAM.md](SIMULATION_STREAM.md)**.
+
 ## Flow diagram
 
 ```mermaid

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SIMULATION stream lab — incremental visibility from practice replay (SSE).">
+  <title>Stream simulation lab · Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body data-page="stream-lab" data-root="../">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="site-banner">SIMULATION / PRACTICE DATA · Not validated challenge science</div>
+  <header id="site-header" class="site-header"></header>
+  <main id="main" class="wrap stream-lab">
+    <header class="stream-lab-hero">
+      <div>
+        <p class="kicker">Visibility stream · centre-ray · synthetic terrain</p>
+        <h1>Incremental replay lab</h1>
+        <p class="stream-lede">Server-Sent Events from the API carry timestamped <strong>visibility_sample</strong> rows. <strong>SCIENCE_CALCULATIONS_READY</strong> stays off; <code>POST /v1/compare</code> is unchanged.</p>
+      </div>
+      <div class="stream-hero-badges">
+        <span class="demo-chip">SIMULATION</span>
+        <span class="demo-chip stream-chip-practice">PRACTICE DATA</span>
+        <p id="api-stream-status" class="stream-status-line" role="status">API: not connected</p>
+      </div>
+    </header>
+
+    <section class="stream-toolbar" aria-label="Stream controls">
+      <div class="stream-toolbar-row">
+        <label class="stream-field">API base
+          <input type="url" id="stream-api-base" class="stream-input" autocomplete="off" placeholder="https://api.example or http://127.0.0.1:8000">
+        </label>
+        <label class="stream-field">Scenario
+          <select id="stream-scenario" class="stream-input" disabled>
+            <option value="s04_malapert_hourly_practice_v1">Site04 vs Malapert · hourly synthetic</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-primary" id="stream-connect">Create session</button>
+      </div>
+      <div class="stream-toolbar-row stream-toolbar-controls">
+        <span id="stream-conn-state" class="stream-pill" role="status">idle</span>
+        <button type="button" class="btn btn-ghost" id="stream-play" disabled>Play</button>
+        <button type="button" class="btn btn-ghost" id="stream-pause" disabled>Pause</button>
+        <button type="button" class="btn btn-ghost" id="stream-step" disabled>Step</button>
+        <button type="button" class="btn btn-ghost" id="stream-stop" disabled>Stop</button>
+        <label class="stream-field stream-field-inline">Speed
+          <input type="range" id="stream-speed" class="stream-range" min="0.25" max="8" step="0.25" value="1" disabled>
+          <span id="stream-speed-label" class="stream-mono">1×</span>
+        </label>
+        <label class="stream-field stream-field-inline">Scrub index
+          <input type="range" id="stream-scrub" class="stream-range" min="0" max="0" value="0" disabled>
+          <span id="stream-index-label" class="stream-mono">0 / 0</span>
+        </label>
+      </div>
+      <p class="stream-help">Uses <code>GET /v1/simulation/stream/session/{id}/events</code> (SSE). Create session first, then connect events (auto on Create). <span class="visually-hidden" id="stream-live-region" aria-live="polite"></span></p>
+    </section>
+
+    <div class="stream-layout">
+      <section class="stream-cards" aria-label="Site comparison">
+        <article class="stream-card" data-site-card="a">
+          <header>
+            <p class="stream-card-slot">Site A</p>
+            <h2 id="card-name-a">—</h2>
+            <p class="stream-card-meta" id="card-meta-a"></p>
+          </header>
+          <div class="stream-sky" id="stream-sky-a" role="img" aria-label="Site A synthetic sky placeholder"></div>
+          <ul class="stream-legend">
+            <li><span class="swatch swatch-geo"></span> Geometric 0°</li>
+            <li><span class="swatch swatch-terr"></span> Terrain silhouette (synthetic)</li>
+            <li><span class="swatch swatch-sun"></span> Sun centre-ray</li>
+            <li><span class="swatch swatch-earth"></span> Earth centre-ray</li>
+          </ul>
+        </article>
+        <article class="stream-card" data-site-card="b">
+          <header>
+            <p class="stream-card-slot">Site B</p>
+            <h2 id="card-name-b">—</h2>
+            <p class="stream-card-meta" id="card-meta-b"></p>
+          </header>
+          <div class="stream-sky" id="stream-sky-b" role="img" aria-label="Site B synthetic sky placeholder"></div>
+          <ul class="stream-legend">
+            <li><span class="swatch swatch-geo"></span> Geometric 0°</li>
+            <li><span class="swatch swatch-terr"></span> Terrain silhouette (synthetic)</li>
+            <li><span class="swatch swatch-sun"></span> Sun centre-ray</li>
+            <li><span class="swatch swatch-earth"></span> Earth centre-ray</li>
+          </ul>
+        </article>
+      </section>
+
+      <aside class="stream-side" aria-label="Context and stream log">
+        <div class="stream-moon-card">
+          <h3>Site locator (context)</h3>
+          <p class="stream-small">South-polar comparison is <strong>illustrative</strong> — not SPICE. Moon in this panel is context only, not a sky object for the observer.</p>
+          <div id="stream-mini-globe" aria-hidden="true"></div>
+        </div>
+        <div class="stream-metrics">
+          <p><strong>Invalid / dropped:</strong> <span id="stream-invalid-count">0</span></p>
+          <p><strong>Last sample UTC:</strong> <span id="stream-last-utc">—</span></p>
+          <p><strong>Sample age:</strong> <span id="stream-sample-age">—</span></p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="stream-table-wrap" aria-labelledby="stream-table-title">
+      <h2 id="stream-table-title">Latest visibility (per site)</h2>
+      <div class="stream-table-scroll">
+        <table class="stream-table" id="stream-summary-table">
+          <thead>
+            <tr>
+              <th scope="col">Site</th>
+              <th scope="col">Sun</th>
+              <th scope="col">Earth</th>
+              <th scope="col">Sun margin °</th>
+              <th scope="col">Earth margin °</th>
+              <th scope="col">UTC</th>
+              <th scope="col">Validity</th>
+            </tr>
+          </thead>
+          <tbody id="stream-summary-body">
+            <tr><td colspan="7" class="stream-empty">No samples yet — create session and play replay.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stream-timeline" aria-label="Replay timeline">
+      <h2>Stream timeline</h2>
+      <p class="stream-small">Gaps in replay are unknown only if a sample is missing; invalid rows increment the rejected counter and do not claim clear.</p>
+      <svg id="stream-timeline-svg" class="stream-timeline-svg" viewBox="0 0 800 120" role="img" aria-label="Synthetic sun state along replay index">
+        <title>Synthetic Sun visibility along replay</title>
+        <rect class="stream-tl-bg" x="40" y="20" width="720" height="70" rx="4"/>
+        <line id="stream-tl-playhead" class="stream-tl-playhead" x1="40" y1="15" x2="40" y2="98"/>
+        <text x="40" y="110" class="stream-tl-cap">index 0</text>
+        <text x="720" y="110" class="stream-tl-cap" text-anchor="end">end</text>
+      </svg>
+    </section>
+
+    <details class="stream-assumptions" id="stream-assumptions">
+      <summary>Data contract, frames, and limitations</summary>
+      <div class="stream-assumptions-inner">
+        <ul>
+          <li><strong>Mode:</strong> SIMULATION / PRACTICE — challenge dataset not assumed.</li>
+          <li><strong>Centre-ray only:</strong> compares disc centre direction to synthetic terrain horizon; not power, comms, or safety.</li>
+          <li><strong>States:</strong> clear, blocked, unknown — unknown never maps to clear (see engine tests).</li>
+          <li><strong>Replay source:</strong> deterministic hourly synthetic angles + toy terrain (Malapert gap / ridge); replace via adapter in <code>backend/simulation/</code>.</li>
+          <li><strong>Transport:</strong> SSE for one-way updates; control plane uses POST on the same API.</li>
+          <li><strong>Science gate:</strong> <code>POST /v1/compare</code> remains gated; this route is separate under <code>/v1/simulation/</code>.</li>
+        </ul>
+        <p>See <a href="../documents.html?doc=SIMULATION_STREAM.md">SIMULATION_STREAM.md</a> and <a href="../documents.html?doc=ENGINE_CALCULATION_PIPELINE.md">ENGINE_CALCULATION_PIPELINE.md</a>.</p>
+      </div>
+    </details>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+  <script src="../assets/js/navigator-config.js"></script>
+  <script src="../assets/js/site.js"></script>
+  <script type="module" src="stream-app.js"></script>
+</body>
+</html>
