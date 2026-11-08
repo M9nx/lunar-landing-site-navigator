@@ -4,7 +4,7 @@ Central workspace for our NASA Space Apps 2026 challenge research, prototype, ev
 
 **Challenge:** [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)
 
-## Project status
+## Project status 
 
 We are in the research and prototype-planning stage. The static interface is deployed on GitHub Pages. A Docker-based team API (GitHub OAuth, run history) and optional JupyterHub research workspace are scaffolded on a loopback Compose stack; validated lunar calculations are not enabled yet.
 
